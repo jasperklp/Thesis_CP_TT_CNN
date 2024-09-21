@@ -1,6 +1,10 @@
 import math
 
 #Checks whether the input is an integer or a list of 2 ints. If it is an integer it returns a list of two. If it's neither of both then raises exception.
+#Input:     The value of the variable to be checked
+#           The name of that variable
+#Output:    A list containing of two ints with the size of the variable.
+
 def check_int_or_list_of_int(value_to_check, name_of_value_to_check):
     if (type(value_to_check) is int):
         return [value_to_check, value_to_check]
@@ -10,7 +14,7 @@ def check_int_or_list_of_int(value_to_check, name_of_value_to_check):
     raise ValueError(f'{name_of_value_to_check} should either be a single int or a list of two ints')
 
 #Inputs certain variables of a convolutional neural layer and outputs the expected required amount of RAM necassary for the kernel and the feature images.
-def ram_estimation_2d(in_channel : int, out_channel : int, kernel_size, image, method, stride, padding, dilitation, rank='None', bits_per_value = 32):
+def ram_estimation_2d(in_channel : int, out_channel : int, kernel_size, image, method, stride, padding, dilitation, rank='None', bits_per_value : int = 32):
     #Check input parameters which could ether be an int or a list of ints.
     kernel_size = check_int_or_list_of_int(kernel_size,   "kernel_size")
     stride      = check_int_or_list_of_int(stride,        "stride")
