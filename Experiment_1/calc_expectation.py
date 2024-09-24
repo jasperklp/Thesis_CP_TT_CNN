@@ -14,7 +14,18 @@ def check_int_or_list_of_int(value_to_check, name_of_value_to_check):
     raise ValueError(f'{name_of_value_to_check} should either be a single int or a list of two ints')
 
 #Inputs certain variables of a convolutional neural layer and outputs the expected required amount of RAM necassary for the kernel and the feature images.
-def ram_estimation_2d(in_channel : int, out_channel : int, kernel_size, image, method, stride, padding, dilitation, rank='None', bits_per_value : int = 32):
+#Input:         in_channel      : Number of in_channels
+#               out_channel     : Number of out_channels
+#               kernel_size     : Kernel size of the CNN layer, could be square or single integer
+#               image           : Size of the image. This is assumed to be 2D. Input can be a single integer or a list of two ints.
+#               method          : Method which is used inside the CNN layer. This could be uncomp (for uncompressed), cp (for canoncial polyadic), tucker (for tucker) or tt for tensor train
+#               stride          : This is the stride used in the CNN. This could be a list of two ints or a single integer which is applied to both sides.
+#               padding         : Give the padding of the CNN. This could be a List of two ints or one int which is applied to both sides of the input image.
+#               dilitation      : Gives the dilitation of the CNN. This could be a list of two ints or one int which is applied to both sizes of the input image.
+#kwargs
+#               rank            : Defaults ('None') user is required to give a (list of) ranks for the cp, tucker and tt decomposition. For uncompressed this is ignored.
+#               bits_per_element: States the number of bits in memory for each element. Defaults to 32 (for 32 bit floating point), but can be adjusted.
+def ram_estimation_2d(in_channel : int, out_channel : int, kernel_size, image, method, stride, padding, dilitation, rank='None', bits_per_element : int = 32):
     #Check input parameters which could ether be an int or a list of ints.
     kernel_size = check_int_or_list_of_int(kernel_size,   "kernel_size")
     stride      = check_int_or_list_of_int(stride,        "stride")
@@ -39,7 +50,7 @@ def ram_estimation_2d(in_channel : int, out_channel : int, kernel_size, image, m
         kernal_storage_size = in_channel * out_channel * math.prod(kernel_size)
         output_image_size   = out_channel * math.prod(image_out)
 
-        return (input_image_size + kernal_storage_size + output_image_size) * bits_per_value
+        return (input_image_size + kernal_storage_size + output_image_size) * bits_per_element
     
     elif method == 'cp' :
         kernal_storage_size = []
@@ -55,10 +66,12 @@ def ram_estimation_2d(in_channel : int, out_channel : int, kernel_size, image, m
         
         #Insert the storage sizes of the consecutive filter images in a list
         filter_storage_size.append(image[0] * image[1] * rank)
-        filter_storage_size.append(image[0] * image[1] * rank)
-        filter_storage_size.append(image[0] * image[1] * rank)
+        filter_storage_size.append(image[0] * image_out[1] * rank)
+        filter_storage_size.append(image_out[0] * image_out[1] * rank)
         
-        return input_image_size + math.prod(kernal_storage_size) + math.prod(filter_storage_size) + output_image_size
+        total_elements = input_image_size + sum(kernal_storage_size) + sum(filter_storage_size) + output_image_size
+
+        return total_elements * bits_per_element
        
     elif method == 'tucker':
         raise(NotImplementedError)
