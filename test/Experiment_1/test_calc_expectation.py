@@ -23,7 +23,7 @@ def test_rank_requirement():
         calc_expectation.ram_estimation_2d(10,20,[3,3],[30,40], 'cp' , 1,1,1)
 
 
-# Test outcomes uncomp
+# Test outcomes memory uncomp
 def test_uncomp_same_input_output_image_size():
     assert calc_expectation.ram_estimation_2d(10,20,3,[30,40], 'uncomp' , 1,1,1) == 1209600
 
@@ -34,7 +34,7 @@ def test_uncomp_no_square_kernel():
     assert calc_expectation.ram_estimation_2d(10,20,[3,5],[30,40], 'uncomp' , 1,1,1) == 37800 * 32
 
 
-# Test outcomes CP
+# Test outcomes memory CP
 def test_cp_same_input_output_image_size():
     assert calc_expectation.ram_estimation_2d(10,20,3,[30,40], 'cp', 1,1,1,rank = 5) == 54180 * 32 # nr of elements times number of bits.
 
@@ -44,4 +44,24 @@ def test_cp_dif_input_output_image_size():
 def test_cp_no_square_kernel():
     assert calc_expectation.ram_estimation_2d(10,20,[3,5],[30,40], 'cp' , 1,1,1,rank = 5) == 52390 * 32
     
+
+# Test outcomes MAC 
+def test_MAC_uncomp_same_input_output_image_size():
+    assert calc_expectation.MAC_estimation_2d(10,20,3,[30,40], 'uncomp' , 1,1,1) == 3 * 3 * 10 * 20 * 30 * 40
+
+def test_MAC_uncomp_dif_input_output_image_size():
+    assert calc_expectation.MAC_estimation_2d(10,20,5,[30,40], 'uncomp' , 1,1,1) == 5 * 5 * 10 * 20 * 28 * 38
+
+def test_MAC_uncomp_no_square_kernel():
+    assert calc_expectation.MAC_estimation_2d(10,20,[3,5],[30,40], 'uncomp' , 1,1,1) == 3 * 5 * 10 * 20 * 30 * 38 
+
+# Test outcomes MAC CP
+def test_MAC_cp_same_input_output_image_size():
+    assert calc_expectation.MAC_estimation_2d(10,20,3,[30,40], 'cp', 1,1,1,rank = 5) ==  216000
+def test_MAC_cp_diff_input_output_image_size():
+    assert calc_expectation.MAC_estimation_2d(10,20,5,[30,40], 'cp', 1,1,1,rank = 5) == 221500
+def test_MAC_cp_non_square_kernel():
+    assert calc_expectation.MAC_estimation_2d(10,20,[3,5],[30,40], 'cp' , 1,1,1,rank = 5) == 219600
+
+
 

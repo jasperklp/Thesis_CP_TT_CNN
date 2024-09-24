@@ -1,5 +1,13 @@
 import math
 
+#Defaults
+
+bits_per_element_default = 32 #Gives the default number of bits for a memeory operation.
+
+
+
+
+
 #Checks whether the input is an integer or a list of 2 ints. If it is an integer it returns a list of two. If it's neither of both then raises exception.
 #Input:     The value of the variable to be checked
 #           The name of that variable
@@ -21,14 +29,8 @@ def check_int_or_list_of_int(value_to_check, name_of_value_to_check):
 #               dilitation  : This is the dilitation of the CNN
 #               k
 def calc_output_image_dim(kernel_size : list, stride : list, padding : list, dilitation: list, in_image: list):
-    kernel_size = check_int_or_list_of_int(kernel_size,   "kernel_size")
-    stride      = check_int_or_list_of_int(stride,        "stride")
-    padding     = check_int_or_list_of_int(padding,       "padding")
-    dilitation  = check_int_or_list_of_int(dilitation,    "dilitation")
-    in_image    = check_int_or_list_of_int(in_image,      "image")
-    
     image_out = []
-    for i in range(len(in_image)):
+    for i in range(2):
             image_out.append(math.floor((in_image[i]  + 2 * padding[i] - dilitation[i] * (kernel_size[i] - 1) - 1)/stride[i]+1))
     return image_out
 
@@ -39,7 +41,7 @@ def validate_MAC_or_RAM_calc_input(kernel_size, stride, padding, dilitation, ima
     dilitation  = check_int_or_list_of_int(dilitation,    "dilitation")
     image       = check_int_or_list_of_int(image,         "image") 
 
-    if (method in {'cp','tucker','tt'}) & (rank == 'None'):
+    if (method in {'cp','tucker','tt'}) & (rank == None):
         raise ValueError(f'For {method} rank cannot be None\nPlease insert a rank')
     
     return [kernel_size, stride, padding, dilitation, image]
@@ -57,7 +59,7 @@ def validate_MAC_or_RAM_calc_input(kernel_size, stride, padding, dilitation, ima
 #kwargs
 #               rank            : Defaults ('None') user is required to give a (list of) ranks for the cp, tucker and tt decomposition. For uncompressed this is ignored.
 #               bits_per_element: States the number of bits in memory for each element. Defaults to 32 (for 32 bit floating point), but can be adjusted.
-def ram_estimation_2d(in_channel : int, out_channel : int, kernel_size, image, method, stride, padding, dilitation, rank='None', bits_per_element : int = 32):
+def ram_estimation_2d(in_channel : int, out_channel : int, kernel_size, image, method, stride, padding, dilitation, rank=None, bits_per_element : int = bits_per_element_default):
     #Check input parameters which could ether be an int or a list of ints.
     [kernel_size, stride, padding, dilitation, image] = validate_MAC_or_RAM_calc_input(kernel_size, stride, padding, dilitation, image, method, rank)
     
@@ -103,7 +105,7 @@ def ram_estimation_2d(in_channel : int, out_channel : int, kernel_size, image, m
     
 
 
-def MAC_estimation_2d(in_channel : int, out_channel : int, kernel_size, image, method, stride, padding, dilitation, rank='None', bits_per_element : int = 32):
+def MAC_estimation_2d(in_channel : int, out_channel : int, kernel_size, image, method, stride, padding, dilitation, rank=None):
     #Check input parameters which could ether be an int or a list of ints.
     [kernel_size, stride, padding, dilitation, image] = validate_MAC_or_RAM_calc_input(kernel_size, stride, padding, dilitation, image, method, rank)
     
@@ -112,13 +114,32 @@ def MAC_estimation_2d(in_channel : int, out_channel : int, kernel_size, image, m
 
     #Based on the input method calculate the number of MACs required.
     if method == 'uncomp':
-        raise NotImplementedError
+        return kernel_size[0] * kernel_size[1] * in_channel * out_channel * image_out[0] * image_out[1]
     elif method == 'cp':
-        raise NotImplementedError
+        filter_operations = []
+        #Append the operations per kernel.
+        filter_operations.append(in_channel * rank * image[0] * image[1])
+        filter_operations.append(kernel_size[1] * rank * image[0] * image_out[1])
+        filter_operations.append(kernel_size[0] * rank * image_out[0] * image_out[1])
+        filter_operations.append(out_channel * rank * image_out[0] * image_out[1])
+        
+        return sum(filter_operations)
     elif method == 'tucker':
         raise NotImplementedError
     elif method == 'tt':
         raise NotImplementedError
     else:
         raise ValueError(f'Give a valid method\nValid methods are:\nuncomp, cp, tt, tucker')
+
+
+
+#This function passes trough a lot of variables MAC and RAM estimation for CNN's have in common. For an explanation of the inputs see reqested functions.
+
+def MAC_and_ram_estimation_2d(in_channel : int, out_channel : int, kernel_size, image, method, stride, padding, dilitation, rank=None, bits_per_element : int = bits_per_element_default):
+    [kernel_size, stride, padding, dilitation, image] = validate_MAC_or_RAM_calc_input(kernel_size, stride, padding, dilitation, image, method, rank)
+    
+    MAC = MAC_estimation_2d(in_channel, out_channel, kernel_size, image, method, stride, padding, dilitation, rank=rank, bits_per_element=bits_per_element)
+    RAM = ram_estimation_2d(in_channel, out_channel, kernel_size, image, method, stride, padding, dilitation, rank=rank)
+
+    return [MAC, RAM]
     
