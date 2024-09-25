@@ -5,10 +5,6 @@ import functools
 
 bits_per_element_default = 32 #Gives the default number of bits for a memeory operation.
 
-
-
-
-
 #Checks whether the input is an integer or a tuple of 2 ints. If it is an integer it returns a tuple of two ints. If it's neither of both then raises exception.
 #Input:     The value of the variable to be checked
 #           The name of that variable
