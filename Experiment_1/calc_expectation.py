@@ -14,7 +14,7 @@ bits_per_element_default = 32 #Gives the default number of bits for a memeory op
 #           The name of that variable
 #Output:    A tuple containing of two ints with the size of the variable.
 @functools.lru_cache
-def check_int_or_tuple_of_int(value_to_check : int | tuple, name_of_value_to_check : str):  
+def check_int_or_tuple_of_int(value_to_check : int | tuple, name_of_value_to_check : str) -> tuple:  
     if (isinstance(value_to_check, int)):
         return (value_to_check, value_to_check)
     elif (isinstance(value_to_check, tuple)) :
@@ -36,7 +36,7 @@ def calc_output_image_dim(kernel_size : tuple, stride : tuple, padding : tuple, 
             image_out.append(math.floor((in_image[i]  + 2 * padding[i] - dilitation[i] * (kernel_size[i] - 1) - 1)/stride[i]+1))
     return image_out
 
-def validate_MAC_or_RAM_calc_input(kernel_size, stride, padding, dilitation, image, method, rank):
+def validate_MAC_or_RAM_calc_input(kernel_size, stride, padding, dilitation, image, method, rank, in_channel, out_channel):
     kernel_size = check_int_or_tuple_of_int(kernel_size,   "kernel_size")
     stride      = check_int_or_tuple_of_int(stride,        "stride")
     padding     = check_int_or_tuple_of_int(padding,       "padding")
@@ -45,8 +45,14 @@ def validate_MAC_or_RAM_calc_input(kernel_size, stride, padding, dilitation, ima
 
     if (method in {'cp','tucker','tt'}) & (rank == None):
         raise ValueError(f'For {method} rank cannot be None\nPlease insert a rank')
-    
-    return [kernel_size, stride, padding, dilitation, image]
+    elif(method == 'cp'):
+        if isinstance(rank,int):
+            rank = rank
+        elif isinstance(rank,float):
+            rank = math.floor(rank * in_channel * out_channel / sum(in_channel + out_channel + sum(kernel_size)))
+        else :
+            raise ValueError(f'CP rank must be an integer or a float')
+    return [kernel_size, stride, padding, dilitation, image, rank]
 
 
 #Inputs certain variables of a convolutional neural layer and outputs the expected required amount of RAM necassary for the kernel and the feature images.
@@ -60,10 +66,11 @@ def validate_MAC_or_RAM_calc_input(kernel_size, stride, padding, dilitation, ima
 #               dilitation      : Gives the dilitation of the CNN. This could be a tuple of two ints or one int which is applied to both sizes of the input image.
 #kwargs
 #               rank            : Defaults ('None') user is required to give a (tuple of) ranks for the cp, tucker and tt decomposition. For uncompressed this is ignored.
+#                               : If float is given the amount of parameters will be scaled.
 #               bits_per_element: States the number of bits in memory for each element. Defaults to 32 (for 32 bit floating point), but can be adjusted.
 def ram_estimation_2d(in_channel : int, out_channel : int, kernel_size : int | tuple[int,int], image: int | tuple[int,int], method: int | tuple[int,int], stride: int | tuple[int,int], padding: int | tuple[int,int], dilitation: int | tuple[int,int], rank=None, bits_per_element : int = bits_per_element_default):
     #Check input parameters which could ether be an int or a tuple of ints.
-    [kernel_size, stride, padding, dilitation, image] = validate_MAC_or_RAM_calc_input(kernel_size, stride, padding, dilitation, image, method, rank)
+    [kernel_size, stride, padding, dilitation, image, rank] = validate_MAC_or_RAM_calc_input(kernel_size, stride, padding, dilitation, image, method, rank, in_channel, out_channel)
     print(1)
     #Calculate the output image as it will always have the same shape
     image_out = calc_output_image_dim(kernel_size,stride, padding, dilitation, image)
@@ -118,7 +125,7 @@ def ram_estimation_2d(in_channel : int, out_channel : int, kernel_size : int | t
 
 def MAC_estimation_2d(in_channel : int, out_channel : int, kernel_size: int | tuple[int,int], image: int | tuple[int,int], method: int | tuple[int,int], stride: int | tuple[int,int], padding: int | tuple[int,int], dilitation: int | tuple[int,int], rank=None):
     #Check input parameters which could ether be an int or a tuple of ints.
-    [kernel_size, stride, padding, dilitation, image] = validate_MAC_or_RAM_calc_input(kernel_size, stride, padding, dilitation, image, method, rank)
+    [kernel_size, stride, padding, dilitation, image, rank] = validate_MAC_or_RAM_calc_input(kernel_size, stride, padding, dilitation, image, method, rank, in_channel, out_channel)
     
     #Calculate the output image as it will always have the same shape
     image_out = calc_output_image_dim(kernel_size,stride, padding, dilitation, image)
@@ -147,7 +154,7 @@ def MAC_estimation_2d(in_channel : int, out_channel : int, kernel_size: int | tu
 #This function passes trough a lot of variables MAC and RAM estimation for CNN's have in common. For an explanation of the inputs see reqested functions.
 
 def MAC_and_ram_estimation_2d(in_channel : int, out_channel : int, kernel_size, image: int | tuple[int,int], method: int | tuple[int,int], stride: int | tuple[int,int], padding: int | tuple[int,int], dilitation: int | tuple[int,int], rank=None, bits_per_element : int = bits_per_element_default):
-    [kernel_size, stride, padding, dilitation, image] = validate_MAC_or_RAM_calc_input(kernel_size, stride, padding, dilitation, image, method, rank)
+    [kernel_size, stride, padding, dilitation, image] = validate_MAC_or_RAM_calc_input(kernel_size, stride, padding, dilitation, image, method, rank, in_channel, out_channel)
     
     MAC = MAC_estimation_2d(in_channel, out_channel, kernel_size, image, method, stride, padding, dilitation, rank=rank)
     RAM = ram_estimation_2d(in_channel, out_channel, kernel_size, image, method, stride, padding, dilitation, rank=rank, bits_per_element=bits_per_element)
