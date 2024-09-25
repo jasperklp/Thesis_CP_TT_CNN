@@ -49,7 +49,9 @@ def validate_MAC_or_RAM_calc_input(kernel_size, stride, padding, dilitation, ima
         if isinstance(rank,int):
             rank = rank
         elif isinstance(rank,float):
-            rank = math.floor(rank * in_channel * out_channel / sum(in_channel + out_channel + sum(kernel_size)))
+            rank = math.floor(rank * in_channel * out_channel * math.prod(kernel_size) / (in_channel + out_channel + sum(kernel_size)))
+            if rank <= 0:
+                rank = 1
         else :
             raise ValueError(f'CP rank must be an integer or a float')
     return [kernel_size, stride, padding, dilitation, image, rank]
@@ -154,7 +156,7 @@ def MAC_estimation_2d(in_channel : int, out_channel : int, kernel_size: int | tu
 #This function passes trough a lot of variables MAC and RAM estimation for CNN's have in common. For an explanation of the inputs see reqested functions.
 
 def MAC_and_ram_estimation_2d(in_channel : int, out_channel : int, kernel_size, image: int | tuple[int,int], method: int | tuple[int,int], stride: int | tuple[int,int], padding: int | tuple[int,int], dilitation: int | tuple[int,int], rank=None, bits_per_element : int = bits_per_element_default):
-    [kernel_size, stride, padding, dilitation, image] = validate_MAC_or_RAM_calc_input(kernel_size, stride, padding, dilitation, image, method, rank, in_channel, out_channel)
+    [kernel_size, stride, padding, dilitation, image,rank] = validate_MAC_or_RAM_calc_input(kernel_size, stride, padding, dilitation, image, method, rank, in_channel, out_channel)
     
     MAC = MAC_estimation_2d(in_channel, out_channel, kernel_size, image, method, stride, padding, dilitation, rank=rank)
     RAM = ram_estimation_2d(in_channel, out_channel, kernel_size, image, method, stride, padding, dilitation, rank=rank, bits_per_element=bits_per_element)

@@ -21,6 +21,17 @@ def test_rank_requirement():
     with pytest.raises(ValueError, match=r".* rank cannot be None\nPlease insert a rank"):
         calc_expectation.ram_estimation_2d(10,20,(3,3),(30,40), 'cp' , 1,1,1)
 
+def test_rank_calc_cp_int():
+    [_,_,_,_,_,rank] = calc_expectation.validate_MAC_or_RAM_calc_input((3,3), (3,3),(3,3),(3,3), (30,30),'cp', rank = 5, in_channel=20,out_channel=20)
+    assert  (rank == 5) & (isinstance(rank, int))
+
+def test_rank_calc_cp_float():
+    [_,_,_,_,_,rank] = calc_expectation.validate_MAC_or_RAM_calc_input((3,3), (3,3),(3,3),(3,3), (30,30),'cp', rank = 0.1, in_channel=20,out_channel=20) 
+    assert  (rank == 7) & (isinstance(rank, int))
+
+def test_rank_calc_cp_float_atleast1():
+    [_,_,_,_,_,rank] = calc_expectation.validate_MAC_or_RAM_calc_input((3,3), (3,3),(3,3),(3,3), (30,30),'cp', rank = 1e-99, in_channel=20,out_channel=20)
+    assert  (rank == 1) & (isinstance(rank, int))
 
 # Test outcomes memory uncomp
 def test_uncomp_same_input_output_image_size():
