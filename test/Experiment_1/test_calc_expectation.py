@@ -3,18 +3,18 @@ from Experiment_1 import calc_expectation
 
 #Test whether al input ar inserted correctly
 def test_check_input_int():
-    assert calc_expectation.check_int_or_list_of_int(3,'kernel_size') == (3,3)
+    assert calc_expectation.check_int_or_tuple_of_int(3,'kernel_size') == (3,3)
 
 def test_check_input_list_of_2_int():
-    assert calc_expectation.check_int_or_list_of_int((3,3),'kernel_size') == (3,3)
+    assert calc_expectation.check_int_or_tuple_of_int((3,3),'kernel_size') == (3,3)
 
 def test_check_input_list_of_3_int():
-    with pytest.raises(ValueError, match=r".* should either be a single int or a list of two ints"):
-        calc_expectation.check_int_or_list_of_int((3,3,3),'kernel_size')
+    with pytest.raises(ValueError, match=r".* should either be a single int or a tuple of two ints"):
+        calc_expectation.check_int_or_tuple_of_int((3,3,3),'kernel_size')
 
 def test_check_input_type_float():
-    with pytest.raises(ValueError, match=r".* should either be a single int or a list of two ints"):
-        calc_expectation.check_int_or_list_of_int(3.0,'kernel_size')
+    with pytest.raises(ValueError, match=r".* should either be a single int or a tuple of two ints"):
+        calc_expectation.check_int_or_tuple_of_int(3.2,'kernel_size')
 
 #Check whether rank is required
 def test_rank_requirement():
