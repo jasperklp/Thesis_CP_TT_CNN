@@ -6,7 +6,8 @@ import matplotlib.pyplot as plt
 plot_rank_relation          : bool  = False
 plot_image_size_relation    : bool  = False
 plot_in_channel_relation    : bool  = False
-plot_kernel_relation        : bool  = True
+plot_kernel_relation        : bool  = False
+plot_in_and_out_channel_relation : bool = True
 
 matplotlib_colours = ['tab:blue', 'tab:orange','tab:green', 'tab:red','tab:purple', 'tab:brown', 'tab:pink','tab:grey', 'tab:olive','tab:cyan']
 
@@ -49,6 +50,7 @@ def plot_dataset(in_channels,out_channels, kernel, image_size, padding, rank, lo
 
     return [macfigure, ramfigure]
 
+
 if __name__ == "__main__":
     if plot_rank_relation == True:
         c = [ 0.1, 0.25, 0.5, 0.75, 1.0]
@@ -73,11 +75,13 @@ if __name__ == "__main__":
         c = [ 0.1, 0.25, 0.5, 0.75, 1.0]
         in_channels = 1024
         out_channels = 1024
-        image_size = [4, 40, 400, 4000 ]
+        image_size = [4, 40, 400, 4000, 40000 ]
         padding = 1
         kernel =  3
+        print_in_log = True
+        show_difference = False
         
-        [macfigure, ramfigure] = plot_dataset(in_channels,out_channels,kernel,image_size,padding,c)
+        [macfigure, ramfigure] = plot_dataset(in_channels,out_channels,kernel,image_size,padding,c,print_in_log,show_difference)
         plt.figure(macfigure)
         plt.title("MAC operations for different image sizes")
         plt.legend()
@@ -89,12 +93,14 @@ if __name__ == "__main__":
     if  plot_in_channel_relation == True:
         c = [ 0.1, 0.25, 0.5, 0.75, 1.0]
         in_channels = [2, 8, 32, 64, 256, 1024]
-        out_channels = 1024
+        out_channels = 256
         image_size = 40
         padding = 1
         kernel =  3
+        print_in_log = True
+        show_difference = False
         
-        [macfigure, ramfigure] = plot_dataset(in_channels,out_channels,kernel,image_size,padding,c)
+        [macfigure, ramfigure] = plot_dataset(in_channels,out_channels,kernel,image_size,padding,c,log=print_in_log, different_compared_to_baseline=show_difference)
         plt.figure(macfigure)
         plt.title("MAC operations for different in_channel values")
         plt.legend()
@@ -110,8 +116,31 @@ if __name__ == "__main__":
         image_size = 40
         padding = 0
         kernel =  [1,3,5,7,9]
+        print_in_log = False
+        show_difference = False
         
-        [macfigure, ramfigure] = plot_dataset(in_channels,out_channels,kernel,image_size,padding,c,log=True,different_compared_to_baseline=True)
+        [macfigure, ramfigure] = plot_dataset(in_channels,out_channels,kernel,image_size,padding,c,log=print_in_log,different_compared_to_baseline=show_difference)
+        plt.figure(macfigure)
+        plt.title("MAC operations for different kernel values")
+        plt.legend()
+
+        plt.figure(ramfigure)
+        plt.title("RAM for different kernel values")
+        plt.legend()
+    
+    #Idee om misschien te plotten????
+    if (plot_in_and_out_channel_relation == True):
+        raise NotImplementedError
+        c = [ 0.1, 0.25, 0.5, 0.75, 1.0]
+        in_channels = [2, 8, 32, 64, 256, 1024]
+        out_channels = in_channels
+        image_size = 40
+        padding = 0
+        kernel =  [1,3,5,7,9]
+        print_in_log = False
+        show_difference = False
+        
+        [macfigure, ramfigure] = plot_dataset_double(in_channels,out_channels,kernel,image_size,padding,c,log=print_in_log,different_compared_to_baseline=show_difference)
         plt.figure(macfigure)
         plt.title("MAC operations for different kernel values")
         plt.legend()
