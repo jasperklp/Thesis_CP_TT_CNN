@@ -1,5 +1,6 @@
 import math
 import functools
+import numpy as np
 
 #Defaults
 
@@ -66,7 +67,7 @@ def validate_MAC_or_RAM_calc_input(kernel_size, stride, padding, dilation, image
 #               rank            : Defaults ('None') user is required to give a (tuple of) ranks for the cp, tucker and tt decomposition. For uncompressed this is ignored.
 #                               : If float is given the amount of parameters will be scaled.
 #               bits_per_element: States the number of bits in memory for each element. Defaults to 32 (for 32 bit floating point), but can be adjusted.
-def ram_estimation_2d(in_channel : int, out_channel : int, kernel_size : int | tuple[int,int], image: int | tuple[int,int], method: int | tuple[int,int], stride: int | tuple[int,int], padding: int | tuple[int,int], dilation: int | tuple[int,int], rank=None, bits_per_element : int = bits_per_element_default):
+def ram_estimation_2d(in_channel : int, out_channel : int, kernel_size : int | tuple[int,int], image: int | tuple[int,int], method: int | tuple[int,int], stride: int | tuple[int,int] = 1, padding: int | tuple[int,int] = 1 , dilation: int | tuple[int,int] = 1, rank=None, bits_per_element : int = bits_per_element_default):
     #Check input parameters which could ether be an int or a tuple of ints.
     [kernel_size, stride, padding, dilation, image, rank] = validate_MAC_or_RAM_calc_input(kernel_size, stride, padding, dilation, image, method, rank, in_channel, out_channel)
     #Calculate the output image as it will always have the same shape
@@ -157,4 +158,42 @@ def MAC_and_ram_estimation_2d(in_channel : int, out_channel : int, kernel_size, 
     RAM = ram_estimation_2d(in_channel, out_channel, kernel_size, image, method, stride, padding, dilation, rank=rank, bits_per_element=bits_per_element)
 
     return [MAC, RAM]
+
+
+def check_list_or_int_float(value_to_check): 
+    if (isinstance(value_to_check, list)) :
+        if(all((isinstance(i, int) | isinstance(i, float)) for i in value_to_check)) :
+            return value_to_check
+    elif isinstance(value_to_check, int) | isinstance(value_to_check,float):
+        return [value_to_check]
+    else:
+        raise ValueError(r'Value must be a list, an integer or a float')
+
+def validate_get_theoretical_data_set_for_plot_input(in_channels, out_channels, kernel_size, image_size,padding,rank):
+    in_channels         = check_list_or_int_float(in_channels)
+    out_channels        = check_list_or_int_float(out_channels)
+    kernel_size         = check_list_or_int_float(kernel_size)
+    image_size          = check_list_or_int_float(image_size)
+    padding             = check_list_or_int_float(padding)
+    rank                = check_list_or_int_float(rank) 
+
+    return [in_channels, out_channels, kernel_size, image_size, padding, rank]
+
+
+def get_theoretical_dataset_for_plot(in_channels: list, out_channels: list, kernel_size:list, image_size:list, padding:list, rank : list):  
+    [in_channels, out_channels, kernel_size, image_size, padding, rank] = validate_get_theoretical_data_set_for_plot_input(in_channels, out_channels, kernel_size, image_size,padding,rank)
+    models = ["uncomp", "cp"]
+    value_type = ["MAC", "RAM"]
+    data = np.ndarray((len(models), len(value_type), len(in_channels), len(out_channels),len(kernel_size),len(image_size),len(padding),len(rank)))
+    
+    for i,in_chan in enumerate(in_channels):
+        for j,out_chan in enumerate(out_channels):
+            for k,kernel in enumerate(kernel_size):
+                for l,img in enumerate(image_size):
+                    for m,pad in enumerate(padding):
+                        for n,rnk in enumerate(rank):
+                            [data[0,0,i,j,k,l,m,n], data[0,1,i,j,k,l,m,n]] = MAC_and_ram_estimation_2d(in_chan,out_chan,kernel,img, 'uncomp', 1,pad,1)
+                            [data[1,0,i,j,k,l,m,n], data[1,1,i,j,k,l,m,n]] = MAC_and_ram_estimation_2d(in_chan,out_chan,kernel,img, 'cp', 1,pad,1, rank=rnk)
+    
+    return data
     
