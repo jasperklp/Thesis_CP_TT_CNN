@@ -1,5 +1,5 @@
 import pytest
-from Experiment_1 import calc_expectation
+from ...Experiment_1 import calc_expectation
 
 #Test whether al input ar inserted correctly
 def test_check_input_int():

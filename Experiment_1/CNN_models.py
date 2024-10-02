@@ -1,5 +1,5 @@
 import torch
-from Experiment_1 import calc_expectation
+import calc_expectation
 import tensorly
 import tltorch
 
@@ -9,7 +9,7 @@ class uncomp_model(torch.nn.Module):
                  , out_channels     :int
                  , kernel_size      :int | tuple
                  , stride           :int | tuple        = 1
-                 , padding          :int | tuple |str   = 0
+                 , padding          :int | tuple |str   = 1
                  , dilation         :int | tuple        = 1
                  , groups           :int                = 1
                  , bias             :bool               = True              
@@ -40,6 +40,9 @@ class uncomp_model(torch.nn.Module):
                                        , device = device
                                        , dtype=dtype
                                        , groups=groups)
+    
+    def get_in_and_out_channels(self):
+        return (self._in_channels, self._out_channels)
         
     def MAC_and_RAM(self, image):
         return calc_expectation.MAC_and_ram_estimation_2d(self._in_channels, self._out_channels, self._kernel_size, image, 'uncomp', self._stride, self._padding, self._dilation, bits_per_element=torch.finfo(self._dtype).bits)
@@ -54,7 +57,7 @@ class cp_tensorly_model(torch.nn.Module):
                  , kernel_size      :int | tuple
                  , rank             :int | float 
                  , stride           :int | tuple        = 1
-                 , padding          :int | tuple |str   = 0
+                 , padding          :int | tuple |str   = 1
                  , dilation         :int | tuple        = 1
                  , groups           :int                = 1
                  , bias             :bool               = True              
@@ -81,7 +84,10 @@ class cp_tensorly_model(torch.nn.Module):
                                                         ,rank
                                                         ,implementation = implementation
                                                         ,factorization= 'cp'
-                                                        ,decompose_weights=True)
+                                                        ,decompose_weights=False)
+        
+    def get_in_and_out_channels(self):
+        return (self._in_channels, self._out_channels)
 
     def MAC_and_RAM(self, image):
         if self._implementation == 'factorized':
