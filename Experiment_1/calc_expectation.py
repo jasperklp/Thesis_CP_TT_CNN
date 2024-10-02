@@ -33,6 +33,14 @@ def calc_output_image_dim(kernel_size : tuple, stride : tuple, padding : tuple, 
             image_out.append(math.floor((in_image[i]  + 2 * padding[i] - dilation[i] * (kernel_size[i] - 1) - 1)/stride[i]+1))
     return image_out
 
+def CP_rank_from_compratio(compressionratio : float, in_channel: int, out_channel : int, kernel_size : tuple):
+    rank =  math.floor(compressionratio * in_channel * out_channel * math.prod(kernel_size) / (in_channel + out_channel + sum(kernel_size)))
+    if (rank == 0):
+        return 1
+    else:
+        return rank
+
+
 def validate_MAC_or_RAM_calc_input(kernel_size, stride, padding, dilation, image, method, rank, in_channel, out_channel):
     kernel_size = check_int_or_tuple_of_int(kernel_size,   "kernel_size")
     stride      = check_int_or_tuple_of_int(stride,        "stride")
@@ -46,7 +54,7 @@ def validate_MAC_or_RAM_calc_input(kernel_size, stride, padding, dilation, image
         if isinstance(rank,int):
             rank = rank
         elif isinstance(rank,float):
-            rank = math.floor(rank * in_channel * out_channel * math.prod(kernel_size) / (in_channel + out_channel + sum(kernel_size)))
+            rank = CP_rank_from_compratio(rank, in_channel, out_channel, kernel_size)
             if rank <= 0:
                 rank = 1
         else :
@@ -64,10 +72,10 @@ def validate_MAC_or_RAM_calc_input(kernel_size, stride, padding, dilation, image
 #               padding         : Give the padding of the CNN. This could be a tuple of two ints or one int which is applied to both sides of the input image.
 #               dilation      : Gives the dilation of the CNN. This could be a tuple of two ints or one int which is applied to both sizes of the input image.
 #kwargs
-#               rank            : Defaults ('None') user is required to give a (tuple of) ranks for the cp, tucker and tt decomposition. For uncompressed this is ignored.
+#               rank            : Defaults ('None') user is required to gCP_rank_from_compratio(rank, in_channel, out_channel, kernel_size)ive a (tuple of) ranks for the cp, tucker and tt decomposition. For uncompressed this is ignored.
 #                               : If float is given the amount of parameters will be scaled.
 #               bits_per_element: States the number of bits in memory for each element. Defaults to 32 (for 32 bit floating point), but can be adjusted.
-def ram_estimation_2d(in_channel : int, out_channel : int, kernel_size : int | tuple[int,int], image: int | tuple[int,int], method: int | tuple[int,int], stride: int | tuple[int,int] = 1, padding: int | tuple[int,int] = 1 , dilation: int | tuple[int,int] = 1, rank=None, bits_per_element : int = bits_per_element_default):
+def ram_estimation_2d(in_channel : int, out_channel : int, kernel_size : int | tuple, image: int | tuple, method: int | tuple, stride = 1, padding = 1 , dilation = 1, rank=None, bits_per_element : int = bits_per_element_default):
     #Check input parameters which could ether be an int or a tuple of ints.
     [kernel_size, stride, padding, dilation, image, rank] = validate_MAC_or_RAM_calc_input(kernel_size, stride, padding, dilation, image, method, rank, in_channel, out_channel)
     #Calculate the output image as it will always have the same shape
@@ -100,8 +108,9 @@ def ram_estimation_2d(in_channel : int, out_channel : int, kernel_size : int | t
         filter_storage_size.append(image_out[0] * image_out[1] * rank)
         
         total_elements = input_image_size + sum(kernal_storage_size) + sum(filter_storage_size) + output_image_size
+        total_bits = total_elements* bits_per_element
 
-        return total_elements * bits_per_element
+        return total_bits 
        
     elif method == 'tucker':
         raise NotImplementedError
