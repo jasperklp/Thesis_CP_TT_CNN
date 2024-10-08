@@ -1,5 +1,5 @@
 import torch
-from Experiment_1 import calc_expectation
+from ..Experiment_1 import calc_expectation
 import tensorly
 import tltorch
 
@@ -109,29 +109,32 @@ class tucker_tensorly_model(torch.nn.Module):
                  , padding_mode     :str                = 'zeros'     
                  , device           :str                = None            
                  , dtype            :torch.dtype        = torch.float32
-                 , implementation   :str                = 'factorized'):
+                 , implementation   :str                = 'factorized'
+                 , fixed_rank_modes :str                = 'spatial'):
         super().__init__()
 
-        self._in_channels    = in_channels
-        self._out_channels   = out_channels
-        self._kernel_size    = kernel_size
-        self._rank           = rank
-        self._implementation = implementation   
-        self._stride         = stride
-        self._padding        = padding
-        self._dilation       = dilation
-        self._bias           = bias
-        self._padding_mode   = padding_mode
-        self._dtype          = dtype
+        self._in_channels       = in_channels
+        self._out_channels      = out_channels
+        self._kernel_size       = kernel_size
+        self._rank              = rank
+        self._implementation    = implementation   
+        self._stride            = stride
+        self._padding           = padding
+        self._dilation          = dilation
+        self._bias              = bias
+        self._padding_mode      = padding_mode
+        self._dtype             = dtype
+        self._fixed_rank_modes  = fixed_rank_modes
 
         self.encoder = tltorch.FactorizedConv.from_conv(torch.nn.Conv2d(in_channels,out_channels,kernel_size,stride,padding,dilation,groups,bias,padding_mode,device,dtype)
                                                         , rank
                                                         , implementation=implementation
                                                         , factorization='tucker'
+                                                        , fixed_rank_modes='spatial'
                                                         , decompose_weights= False)
         
-    def MAC_and_RAM(self, image)
-        if self._implementation == 'factorized':
+    def MAC_and_RAM(self, image):
+        if (self._implementation == 'factorized') & (self._fixed_rank_modes == 'spatial'):
             method = 'tucker'
         elif self._implementation == 'reconstructed':
             method = 'uncomp'

@@ -1,5 +1,5 @@
 import pytest
-from Experiment_1 import calc_expectation
+from ...Experiment_1 import calc_expectation
 
 #Test whether al input ar inserted correctly
 def test_check_input_int():
@@ -53,7 +53,16 @@ def test_cp_dif_input_output_image_size():
 
 def test_cp_no_square_kernel():
     assert calc_expectation.ram_estimation_2d(10,20,(3,5),(30,40), 'cp' , 1,1,1,rank = 5) == 52390 * 32
-    
+
+#Test outcomes memory Tucker
+def test_tucker_same_input_output_image_size():
+    assert calc_expectation.ram_estimation_2d(10,20,3,(30,40), 'tucker', 1,1,1, rank=(3,3,4,2)) == 43352 * 32
+
+def test_cp_dif_input_output_image_size():
+    assert calc_expectation.ram_estimation_2d(10,20,5,(30,40), 'tucker', 1,1,1,rank=(3,3,4,2)) == 40488 * 32
+
+def test_cp_no_square_kernel():
+    assert calc_expectation.ram_estimation_2d(10,20,(3,5),(30,40), 'tucker' , 1,1,1,rank=(3,5,4,2)) == 42080 * 32
 
 # Test outcomes MAC 
 def test_MAC_uncomp_same_input_output_image_size():
@@ -72,6 +81,9 @@ def test_MAC_cp_diff_input_output_image_size():
     assert calc_expectation.MAC_estimation_2d(10,20,5,(30,40), 'cp', 1,1,1,rank = 5) == 221500
 def test_MAC_cp_non_square_kernel():
     assert calc_expectation.MAC_estimation_2d(10,20,(3,5),(30,40), 'cp' , 1,1,1,rank = 5) == 219600
+
+# Test outcomes MAC Tucker
+
 
 
 #Test combination

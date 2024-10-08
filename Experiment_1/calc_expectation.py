@@ -1,6 +1,7 @@
 import math
 import functools
 import numpy as np
+from tensorly import tucker_tensor
 
 #Defaults
 
@@ -59,6 +60,21 @@ def validate_MAC_or_RAM_calc_input(kernel_size, stride, padding, dilation, image
                 rank = 1
         else :
             raise ValueError(f'CP rank must be an integer or a float')
+    elif(method == 'tucker'):
+        if isinstance(rank, float):
+            rank = tucker_tensor.validate_tucker_rank((out_channel, in_channel, kernel_size[0], kernel_size[1]) , rank=rank, fixed_modes=[2,3])
+            #Note that the ranks are permuted as the convention of "COMPRESSION OF DEEP CONVOLUTIONAL NEURAL NETWORKS FOR FAST AND LOW POWER MOBILE APPLICATIONS" by Kim et. al. (2016) is followed
+            rank = (rank[2], rank[3],rank[1],rank[0])
+        if isinstance(rank,int):
+            rank = (kernel_size[0],kernel_size[1],rank,rank)
+        elif isinstance(rank, tuple):
+            if all(isinstance(i,int) for i in rank) & len(rank) == 4:
+                rank = rank
+        else:
+            raise NotImplemented(r'Rank is not implemented for this value')     
+    elif(method == 'tt'):
+        raise NotImplementedError
+    
     return [kernel_size, stride, padding, dilation, image, rank]
 
 
@@ -113,7 +129,28 @@ def ram_estimation_2d(in_channel : int, out_channel : int, kernel_size : int | t
         return total_bits 
        
     elif method == 'tucker':
-        raise NotImplementedError
+        kernal_storage_size = []
+        filter_storage_size = []
+        
+        #Calculate the size of the input and the output image
+        input_image_size = in_channel * math.prod(image)
+        output_image_size = out_channel * math.prod(image_out)
+
+        # Calculate the storage size for each kernel
+        kernal_storage_size.append(in_channel * rank[2])
+        kernal_storage_size.append(math.prod(kernel_size) * rank[2] * rank[3])
+        kernal_storage_size.append(out_channel * rank[3])
+
+        #Calculate the storage size for the intermediate filters
+        filter_storage_size.append(image[0] * image[1] * rank[2])
+        filter_storage_size.append(image_out[0] * image_out[1] * rank[3])
+
+        total_elements = input_image_size + sum(kernal_storage_size) + sum(filter_storage_size) + output_image_size
+        total_bits = total_elements * bits_per_element
+
+        return total_bits
+
+
     elif method == 'tt':
         raise NotImplementedError
     else : 
@@ -150,7 +187,15 @@ def MAC_estimation_2d(in_channel : int, out_channel : int, kernel_size: int | tu
         
         return sum(filter_operations)
     elif method == 'tucker':
-        raise NotImplementedError
+        filter_operations = []
+
+        #Append the amount of operations per kernel
+        filter_operations.append(in_channel * rank[2] * image[0] * image[1])
+        filter_operations.append(math.prod(kernel_size) * rank[2] * rank[3] * image_out[0] * image_out[1])
+        filter_operations.append(rank[3] * out_channel * image_out[0] * image_out[1])
+
+        return sum(filter_operations)
+    
     elif method == 'tt':
         raise NotImplementedError
     else:
