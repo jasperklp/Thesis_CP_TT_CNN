@@ -75,27 +75,24 @@ def validate_MAC_or_RAM_calc_input(kernel_size, stride, padding, dilation, image
 #               rank            : Defaults ('None') user is required to gCP_rank_from_compratio(rank, in_channel, out_channel, kernel_size)ive a (tuple of) ranks for the cp, tucker and tt decomposition. For uncompressed this is ignored.
 #                               : If float is given the amount of parameters will be scaled.
 #               bits_per_element: States the number of bits in memory for each element. Defaults to 32 (for 32 bit floating point), but can be adjusted.
-def ram_estimation_2d(in_channel : int, out_channel : int, kernel_size : int | tuple, image: int | tuple, method: int | tuple, stride = 1, padding = 1 , dilation = 1, rank=None, bits_per_element : int = bits_per_element_default):
+def ram_estimation_2d(in_channel : int, out_channel : int, kernel_size : int | tuple, image: int | tuple, method: int | tuple, stride = 1, padding = 1 , dilation = 1, rank=None, bits_per_element : int = bits_per_element_default , output_total : bool = True, output_in_bytes : bool = False):
     #Check input parameters which could ether be an int or a tuple of ints.
     [kernel_size, stride, padding, dilation, image, rank] = validate_MAC_or_RAM_calc_input(kernel_size, stride, padding, dilation, image, method, rank, in_channel, out_channel)
     #Calculate the output image as it will always have the same shape
     image_out = calc_output_image_dim(kernel_size,stride, padding, dilation, image)
     
+    kernal_storage_size = []
+    filter_storage_size = []
+    input_image_size    = in_channel * math.prod(image)
+    output_image_size   = out_channel * math.prod(image_out)
     
     #Based on the mehtod, calculate the RAM required.
     if method == 'uncomp':
-        input_image_size    = in_channel * math.prod(image)
-        kernal_storage_size = in_channel * out_channel * math.prod(kernel_size)
-        output_image_size   = out_channel * math.prod(image_out)
-
-        return (input_image_size + kernal_storage_size + output_image_size) * bits_per_element
-    
+        kernal_storage_size.append(in_channel * out_channel * math.prod(kernel_size))
+        filter_storage_size.append(0)
+   
     elif method == 'cp' :
-        kernal_storage_size = []
-        filter_storage_size = []
-        input_image_size    = in_channel * math.prod(image)
-        output_image_size   = out_channel * math.prod(image_out)
-        
+      
         #Add the storage size for each of the four kernels.
         kernal_storage_size.append(in_channel * rank)
         kernal_storage_size.append(kernel_size[0] * rank)
@@ -107,17 +104,21 @@ def ram_estimation_2d(in_channel : int, out_channel : int, kernel_size : int | t
         filter_storage_size.append(image[0] * image_out[1] * rank)
         filter_storage_size.append(image_out[0] * image_out[1] * rank)
         
-        total_elements = input_image_size + sum(kernal_storage_size) + sum(filter_storage_size) + output_image_size
-        total_bits = total_elements* bits_per_element
-
-        return total_bits 
-       
+   
     elif method == 'tucker':
         raise NotImplementedError
     elif method == 'tt':
         raise NotImplementedError
     else : 
         raise ValueError(f'Give a valid method\nValid methods are:\nuncomp, cp, tt, tucker')
+    
+    per_element_multiplier = bits_per_element // 8 if output_in_bytes else bits_per_element 
+
+    if output_total :
+        output_elements = input_image_size + sum(kernal_storage_size) + sum(filter_storage_size) + output_image_size
+        return output_elements * per_element_multiplier
+    else:
+        return [input_image_size*per_element_multiplier, [i*per_element_multiplier for i in kernal_storage_size], [i*per_element_multiplier for i in filter_storage_size],output_image_size*per_element_multiplier]
     
 
 #Inputs certain variables of a convolutional neural layer and outputs the expected required amount of RAM necassary for the kernel and the feature images.
