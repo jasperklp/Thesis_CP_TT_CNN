@@ -145,21 +145,18 @@ def ram_estimation_2d(in_channel : int, out_channel : int, kernel_size : int | t
     #Calculate the output image as it will always have the same shape
     image_out = calc_output_image_dim(kernel_size,stride, padding, dilation, image)
     
-    
-    #Based on the method, calculate the RAM required.
-    if method == 'uncomp':
-        input_image_size    = in_channel * math.prod(image)
-        kernal_storage_size = in_channel * out_channel * math.prod(kernel_size)
-        output_image_size   = out_channel * math.prod(image_out)
+    kernal_storage_size = []
+    filter_storage_size = []
+    input_image_size    = in_channel * math.prod(image)
+    output_image_size   = out_channel * math.prod(image_out)
 
-        return (input_image_size + kernal_storage_size + output_image_size) * bits_per_element
-    
+    #Based on the mehtod, calculate the RAM required.
+    if method == 'uncomp':
+        kernal_storage_size.append(in_channel * out_channel * math.prod(kernel_size))
+        filter_storage_size.append(0)
+   
     elif method == 'cp' :
-        kernal_storage_size = []
-        filter_storage_size = []
-        input_image_size    = in_channel * math.prod(image)
-        output_image_size   = out_channel * math.prod(image_out)
-        
+      
         #Add the storage size for each of the four kernels.
         kernal_storage_size.append(in_channel * rank)
         kernal_storage_size.append(kernel_size[0] * rank)
@@ -171,17 +168,21 @@ def ram_estimation_2d(in_channel : int, out_channel : int, kernel_size : int | t
         filter_storage_size.append(image[0] * image_out[1] * rank)
         filter_storage_size.append(image_out[0] * image_out[1] * rank)
         
-        total_elements = input_image_size + sum(kernal_storage_size) + sum(filter_storage_size) + output_image_size
-        total_bits = total_elements* bits_per_element
-
-        return total_bits 
-       
+   
     elif method == 'tucker':
         raise NotImplementedError
     elif method == 'tt':
         raise NotImplementedError
     else : 
         raise ValueError(f'Give a valid method\nValid methods are:\nuncomp, cp, tt, tucker')
+    
+    per_element_multiplier = bits_per_element // 8 if output_in_bytes else bits_per_element 
+
+    if output_total :
+        output_elements = input_image_size + sum(kernal_storage_size) + sum(filter_storage_size) + output_image_size
+        return output_elements * per_element_multiplier
+    else:
+        return [input_image_size*per_element_multiplier, [i*per_element_multiplier for i in kernal_storage_size], [i*per_element_multiplier for i in filter_storage_size],output_image_size*per_element_multiplier]
     
 
 

@@ -73,6 +73,32 @@ def test_MAC_cp_diff_input_output_image_size():
 def test_MAC_cp_non_square_kernel():
     assert calc_expectation.MAC_estimation_2d(10,20,(3,5),(30,40), 'cp' , 1,1,1,rank = 5) == 219600
 
+#Test outcomes RAM split uncomp
+def test_RAM_split_uncomp():
+    assert calc_expectation.ram_estimation_2d(10,20,3,(30,40),'uncomp',1,1,1,output_total=False) == [384000,[57600],[0], 768000]
+
+def test_RAM_split_cp():
+    assert calc_expectation.ram_estimation_2d(10,20,3,(30,40),'cp',1,1,1,rank=5,output_total=False) == [12000*32,[50*32,15*32,15*32,100*32],[6000*32,6000*32,6000*32], 24000*32]
+
+
+#Test outcomes RAM bytes
+def test_RAM_in_bytes_together_uncomp():
+    uncomp_bytes = calc_expectation.ram_estimation_2d(10,20,3,(30,40),'uncomp',1,1,1,output_total=True, output_in_bytes=True)
+    uncomp_bits = calc_expectation.ram_estimation_2d(10,20,3,(30,40),'uncomp',1,1,1,output_total = True, output_in_bytes=False)
+
+    assert uncomp_bytes == uncomp_bits // 8
+
+def test_RAM_in_bytes_split_uncomp():
+    uncomp_bytes = calc_expectation.ram_estimation_2d(10,20,3,(30,40),'uncomp',1,1,1,output_total=False, output_in_bytes=True)
+    uncomp_bits = calc_expectation.ram_estimation_2d(10,20,3,(30,40),'uncomp',1,1,1,output_total = False, output_in_bytes=False)
+
+    assert uncomp_bytes == [i / 8 if type(i) == int else [j/8 for j in i] for i in uncomp_bits ]
+
+def test_RAM_in_bytes_split_cp():
+    cp_bytes = calc_expectation.ram_estimation_2d(10,20,3,(30,40),'cp',1,1,1,rank=5,output_in_bytes=True,output_total=False)
+    cp_bits = calc_expectation.ram_estimation_2d(10,20,3,(30,40),'cp',1,1,1,rank=5,output_total=False)
+
+    assert cp_bytes == [i / 8 if type(i) == int else [j/8 for j in i] for i in cp_bits ]
 
 #Test combination
 def test_MACRAM_uncomp_dif_no_square_kernel_input_output_image():
