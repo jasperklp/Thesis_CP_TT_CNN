@@ -39,25 +39,30 @@ def model_runner(model, epochs : int, image_size : int|tuple, device : str = 'cp
     if verbose == True:
         print("Start experiment")
     
-    input_calc = torch.randn(in_channels, out_channels, image_size[0], image_size[1],dtype=torch.float32)
-    with profile(activities=[ProfilerActivity.CPU], profile_memory=True) as prof:
+    with profile(activities=[ProfilerActivity.CPU], profile_memory=True,record_shapes=True, with_stack=True) as prof:
 
             for i in tqdm.tqdm(range(epochs)):
                 with record_function("Inputimage"):
-                    input = copy.deepcopy(input_calc)
+                    input = torch.randn(1,in_channels, image_size[0], image_size[1],dtype=torch.float32)
+                    print(input.nbytes)
                 with record_function("model_size"):
                     model_test = copy.deepcopy(model)
                 with torch.no_grad():
-                    with record_function("model_inference"):
-                        start = time.time()
-                        model_test(input)
-                        end =   time.time()
+                    #with record_function("model_inference"):
+                    start = time.time()
+                    output = model_test(input)
+                    end =   time.time()
+
+                # with record_function("output"):
+                #     output_test = copy.deepcopy(output)
 
                 wall_time = end - start
 
                 total_time += wall_time
 
     print(prof.key_averages().table(sort_by="cpu_memory_usage"))
+    prof.export_chrome_trace("trace.json")
+    prof.export_memory_timeline("trace2.html")
     return total_time
 
 
