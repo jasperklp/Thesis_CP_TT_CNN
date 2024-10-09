@@ -94,7 +94,7 @@ if __name__ == "__main__":
 
     if  plot_in_channel_relation == True:
         c = [ 0.1, 0.25, 0.5, 0.75, 1.0]
-        in_channels = [16, 32, 64, 128,256, 1024,2048,4096]
+        in_channels = [16, 32, 64, 128,256, 1024,2048,4096,8192,16384]
         out_channels = 256
         image_size = 40
         padding = 1
@@ -115,7 +115,7 @@ if __name__ == "__main__":
 
     if(plot_out_channel_relation) == True:
         c = [ 0.1, 0.25, 0.5, 0.75, 1.0]
-        in_channels = 256
+        in_channels = 1024
         out_channels = [16, 32, 64, 128,256, 1024,2048,4096]
         image_size = 40
         padding     = 1
