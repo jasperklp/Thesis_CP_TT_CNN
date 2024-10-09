@@ -25,3 +25,11 @@ def test_MAC_and_RAM_cp_model_reconstructed():
     MACRAM_model = model.MAC_and_RAM(image)
     MACRAM_direct = calc_expectation.MAC_and_ram_estimation_2d(10,20,3,image,'uncomp',1,2,3)
     assert MACRAM_model == MACRAM_direct
+
+def test_MAC_and_RAM_cp_model_split():
+    image = (30,40)
+    rank = 5
+    model = CNN_models.cp_tensorly_model(10,20,3,rank,1,2,3,1)
+    MACRAM_model = model.MAC_and_RAM(image,output_total=False, output_in_bytes=True)
+    MACRAM_direct = calc_expectation.MAC_and_ram_estimation_2d(10,20,3,image,'cp',1,2,3, rank=rank,output_total=False, output_in_bytes=True)
+    assert MACRAM_model == MACRAM_direct

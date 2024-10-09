@@ -44,8 +44,8 @@ class uncomp_model(torch.nn.Module):
     def get_in_and_out_channels(self):
         return (self._in_channels, self._out_channels)
         
-    def MAC_and_RAM(self, image):
-        return calc_expectation.MAC_and_ram_estimation_2d(self._in_channels, self._out_channels, self._kernel_size, image, 'uncomp', self._stride, self._padding, self._dilation, bits_per_element=torch.finfo(self._dtype).bits)
+    def MAC_and_RAM(self, image,output_in_bytes = False, output_total = True):
+        return calc_expectation.MAC_and_ram_estimation_2d(self._in_channels, self._out_channels, self._kernel_size, image, 'uncomp', self._stride, self._padding, self._dilation, bits_per_element=torch.finfo(self._dtype).bits,output_in_bytes = output_in_bytes, output_total = output_total)
 
     def forward(self,x):
         return self.encoder(x)
@@ -89,7 +89,7 @@ class cp_tensorly_model(torch.nn.Module):
     def get_in_and_out_channels(self):
         return (self._in_channels, self._out_channels)
 
-    def MAC_and_RAM(self, image):
+    def MAC_and_RAM(self, image,output_in_bytes = False, output_total = True):
         if self._implementation == 'factorized':
             method = 'cp'
         elif (self._implementation == 'reconstructed'):
@@ -97,7 +97,7 @@ class cp_tensorly_model(torch.nn.Module):
         else:
             NotImplementedError(r'For this implementation of the FactorizedConv, no MAC and RAM are worked out')
     
-        return calc_expectation.MAC_and_ram_estimation_2d(self._in_channels, self._out_channels, self._kernel_size, image, method, self._stride, self._padding, self._dilation, bits_per_element=torch.finfo(self._dtype).bits,rank=self._rank)
+        return calc_expectation.MAC_and_ram_estimation_2d(self._in_channels, self._out_channels, self._kernel_size, image, method, self._stride, self._padding, self._dilation, bits_per_element=torch.finfo(self._dtype).bits,rank=self._rank,output_in_bytes = output_in_bytes, output_total = output_total)
     def forward(self, x):
         return self.encoder(x)
     
