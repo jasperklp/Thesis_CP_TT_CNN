@@ -36,23 +36,21 @@ def model_runner(model, epochs : int, image_size : int|tuple, device : str = 'cp
         torch.backends.cudnn.deterministic == False
     torch.use_deterministic_algorithms(True)
 
-    
-
-
-
     if verbose == True:
         print("Start experiment")
     
-    
+    input_calc = torch.randn(in_channels, out_channels, image_size[0], image_size[1],dtype=torch.float32)
     with profile(activities=[ProfilerActivity.CPU], profile_memory=True) as prof:
-        
+
             for i in tqdm.tqdm(range(epochs)):
-                input = torch.randn(in_channels, out_channels, image_size[0], image_size[1])
+                with record_function("Inputimage"):
+                    input = copy.deepcopy(input_calc)
+                with record_function("model_size"):
+                    model_test = copy.deepcopy(model)
                 with torch.no_grad():
                     with record_function("model_inference"):
-                        #model_test = copy.deepcopy(model)
                         start = time.time()
-                        model(input)
+                        model_test(input)
                         end =   time.time()
 
                 wall_time = end - start
