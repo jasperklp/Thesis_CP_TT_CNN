@@ -131,41 +131,43 @@ def ram_estimation_2d(in_channel : int, out_channel : int, kernel_size : int | t
 #               padding         : Give the padding of the CNN. This could be a tuple of two ints or one int which is applied to both sides of the input image.
 #               dilation      : Gives the dilation of the CNN. This could be a tuple of two ints or one int which is applied to both sizes of the input image.
 
-def MAC_estimation_2d(in_channel : int, out_channel : int, kernel_size: int | tuple[int,int], image: int | tuple[int,int], method: int | tuple[int,int], stride: int | tuple[int,int], padding: int | tuple[int,int], dilation: int | tuple[int,int], rank=None):
+def MAC_estimation_2d(in_channel : int, out_channel : int, kernel_size: int | tuple[int,int], image: int | tuple[int,int], method: int | tuple[int,int], stride: int | tuple[int,int], padding: int | tuple[int,int], dilation: int | tuple[int,int], rank=None, output_total : bool = True):
     #Check input parameters which could ether be an int or a tuple of ints.
     [kernel_size, stride, padding, dilation, image, rank] = validate_MAC_or_RAM_calc_input(kernel_size, stride, padding, dilation, image, method, rank, in_channel, out_channel)
     
     #Calculate the output image as it will always have the same shape
     image_out = calc_output_image_dim(kernel_size,stride, padding, dilation, image)
+    filter_operations = []
 
     #Based on the input method calculate the number of MACs required.
     if method == 'uncomp':
-        return kernel_size[0] * kernel_size[1] * in_channel * out_channel * image_out[0] * image_out[1]
+        filter_operations.append(kernel_size[0] * kernel_size[1] * in_channel * out_channel * image_out[0] * image_out[1])
     elif method == 'cp':
-        filter_operations = []
         #Append the operations per kernel.
         filter_operations.append(in_channel * rank * image[0] * image[1])
         filter_operations.append(kernel_size[1] * rank * image[0] * image_out[1])
         filter_operations.append(kernel_size[0] * rank * image_out[0] * image_out[1])
         filter_operations.append(out_channel * rank * image_out[0] * image_out[1])
         
-        return sum(filter_operations)
     elif method == 'tucker':
         raise NotImplementedError
     elif method == 'tt':
         raise NotImplementedError
     else:
         raise ValueError(f'Give a valid method\nValid methods are:\nuncomp, cp, tt, tucker')
-
-
-
+    
+    if output_total == True:
+        return sum(filter_operations)
+    else:
+        return filter_operations
+    
 #This function passes trough a lot of variables MAC and RAM estimation for CNN's have in common. For an explanation of the inputs see reqested functions.
 
-def MAC_and_ram_estimation_2d(in_channel : int, out_channel : int, kernel_size, image: int | tuple[int,int], method: int | tuple[int,int], stride: int | tuple[int,int], padding: int | tuple[int,int], dilation: int | tuple[int,int], rank=None, bits_per_element : int = bits_per_element_default):
+def MAC_and_ram_estimation_2d(in_channel : int, out_channel : int, kernel_size, image: int | tuple[int,int], method: int | tuple[int,int], stride: int | tuple[int,int], padding: int | tuple[int,int], dilation: int | tuple[int,int], rank=None, bits_per_element : int = bits_per_element_default, output_total : bool = True, output_in_bytes : bool = False):
     [kernel_size, stride, padding, dilation, image,rank] = validate_MAC_or_RAM_calc_input(kernel_size, stride, padding, dilation, image, method, rank, in_channel, out_channel)
     
-    MAC = MAC_estimation_2d(in_channel, out_channel, kernel_size, image, method, stride, padding, dilation, rank=rank)
-    RAM = ram_estimation_2d(in_channel, out_channel, kernel_size, image, method, stride, padding, dilation, rank=rank, bits_per_element=bits_per_element)
+    MAC = MAC_estimation_2d(in_channel, out_channel, kernel_size, image, method, stride, padding, dilation, rank=rank, output_total=output_total)
+    RAM = ram_estimation_2d(in_channel, out_channel, kernel_size, image, method, stride, padding, dilation, rank=rank, bits_per_element=bits_per_element, output_total=output_total,output_in_bytes=output_in_bytes)
 
     return [MAC, RAM]
 

@@ -100,9 +100,21 @@ def test_RAM_in_bytes_split_cp():
 
     assert cp_bytes == [i / 8 if type(i) == int else [j/8 for j in i] for i in cp_bits ]
 
+#Test other outcomes MAC
+def test_MAC_splittotal_cp():
+    cp_MAC_split = calc_expectation.MAC_estimation_2d(10,20,3,(30,40), 'cp', 1,1,1,rank = 5, output_total=False)
+    cp_MAC_total = calc_expectation.MAC_estimation_2d(10,20,3,(30,40), 'cp', 1,1,1,rank = 5)
+    assert cp_MAC_total == sum(cp_MAC_split)
+
+def test_MAC_split_cp():
+    cp_MAC_split = calc_expectation.MAC_estimation_2d(10,20,3,(30,40), 'cp', 1,1,1,rank = 5, output_total=False)
+    assert cp_MAC_split == [10*5*30*40, 3*5*30*40,3*5*30*40,20*5*30*40]
+
 #Test combination
 def test_MACRAM_uncomp_dif_no_square_kernel_input_output_image():
     assert calc_expectation.MAC_and_ram_estimation_2d(10,20,(3,7), (30,40), 'uncomp', 1, 2, 3) == [calc_expectation.MAC_estimation_2d(10,20,(3,7), (30,40), 'uncomp', 1, 2, 3), calc_expectation.ram_estimation_2d(10,20,(3,7), (30,40), 'uncomp', 1, 2, 3)]
 
+def test_MACRAM_uncomp_dif_no_square_kernel_input_output_image():
+    assert calc_expectation.MAC_and_ram_estimation_2d(10,20,(3,7), (30,40), 'cp', 1, 2, 3, rank=5,output_in_bytes=True, output_total=False) == [calc_expectation.MAC_estimation_2d(10,20,(3,7), (30,40),  'cp', 1, 2, 3, rank=5, output_total=False), calc_expectation.ram_estimation_2d(10,20,(3,7), (30,40), 'cp', 1, 2, 3, rank=5,output_in_bytes=True, output_total=False)]
 
 
