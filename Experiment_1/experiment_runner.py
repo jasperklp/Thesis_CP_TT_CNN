@@ -10,6 +10,7 @@ from torch.profiler import profile, record_function, ProfilerActivity
 chosen_seed = 100
 
 
+
 def model_runner(model, epochs : int, image_size : int|tuple, device : str = 'cpu', verbose : bool = False):
     if verbose == True:
         print(f"Running a model")
@@ -18,10 +19,17 @@ def model_runner(model, epochs : int, image_size : int|tuple, device : str = 'cp
     image_size = calc_expectation.check_int_or_tuple_of_int(image_size, "image_size")
     if not(issubclass(type(model),torch.nn.Module)):
         raise TypeError(r'Model should be an instance of a subclass of torch.nn.Module')
+    
     try:
         in_channels, out_channels = model.get_in_and_out_channels()
     except: 
-        raise NotImplementedError("get_in_and_out_channels method is not implemented or functioning")
+        raise AttributeError("Could not get in and out channel from model using get_in_and_out_channels method")
+    
+    if (verbose == True):
+        print("Model's state_dict:")
+        for param_tensor in model.state_dict():
+            print("\t",param_tensor, "\t", model.state_dict()[param_tensor].size())
+
     if not(isinstance(device, str)):
         raise TypeError("Device type is not a string")
     else:  
@@ -64,6 +72,7 @@ def model_runner(model, epochs : int, image_size : int|tuple, device : str = 'cp
     prof.export_chrome_trace("trace.json")
     prof.export_memory_timeline("trace2.html")
     return total_time
+
 
 
 
