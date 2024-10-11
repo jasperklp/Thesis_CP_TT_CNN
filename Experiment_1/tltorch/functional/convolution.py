@@ -131,7 +131,7 @@ def general_conv1d(x, kernel, mode, bias=None, stride=1, padding=0, groups=1, di
         if i != mode:
             kernel = kernel.unsqueeze(i)
 
-    with record_function(f'{mode} th kernel'): 
+    with record_function(f'Filter_image {mode}'): 
         return _CONVOLUTION[order](x, kernel, bias=bias, 
                                stride=_pad_value(stride, mode, order),
                                padding=_pad_value(padding, mode, order, padding=0), 
@@ -261,7 +261,7 @@ def cp_conv(x, cp_tensor, bias=None, stride=1, padding=0, dilation=1):
 
     # First conv == tensor contraction
     # from (in_channels, rank) to (rank == out_channels, in_channels, 1)
-    with record_function("First kernel"):
+    with record_function("Filter_image 1"):
         x = F.conv1d(x, tl.transpose(cp_tensor.factors[1]).unsqueeze(2))
 
     x_shape[1] = rank
@@ -279,7 +279,7 @@ def cp_conv(x, cp_tensor, bias=None, stride=1, padding=0, dilation=1):
     # Last conv == tensor contraction
     # From (out_channels, rank) to (out_channels, in_channels == rank, 1)
     x = x*cp_tensor.weights.unsqueeze(1).unsqueeze(0)
-    with record_function("Last kernel"):
+    with record_function("Filter_image 4"):
         x_old = x
         x = F.conv1d(x, cp_tensor.factors[0].unsqueeze(2), bias=bias)
     x_old

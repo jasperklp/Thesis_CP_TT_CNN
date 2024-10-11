@@ -2,6 +2,7 @@ import torch
 import calc_expectation
 import tensorly
 import tltorch
+from torch.profiler import record_function
 
 
 class uncomp_model(torch.nn.Module):
@@ -48,7 +49,8 @@ class uncomp_model(torch.nn.Module):
         return calc_expectation.MAC_and_ram_estimation_2d(self._in_channels, self._out_channels, self._kernel_size, image, 'uncomp', self._stride, self._padding, self._dilation, bits_per_element=torch.finfo(self._dtype).bits,output_in_bytes = output_in_bytes, output_total = output_total)
 
     def forward(self,x):
-        return self.encoder(x)
+        with record_function("Filter_image 1"):
+            return self.encoder(x)
     
 
 class cp_tensorly_model(torch.nn.Module):
