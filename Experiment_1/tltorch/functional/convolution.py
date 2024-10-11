@@ -131,7 +131,8 @@ def general_conv1d(x, kernel, mode, bias=None, stride=1, padding=0, groups=1, di
         if i != mode:
             kernel = kernel.unsqueeze(i)
 
-    return _CONVOLUTION[order](x, kernel, bias=bias, 
+    with record_function(f'{mode} th kernel'): 
+        return _CONVOLUTION[order](x, kernel, bias=bias, 
                                stride=_pad_value(stride, mode, order),
                                padding=_pad_value(padding, mode, order, padding=0), 
                                dilation=_pad_value(dilation, mode, order), 
@@ -269,9 +270,8 @@ def cp_conv(x, cp_tensor, bias=None, stride=1, padding=0, dilation=1):
     # convolve over non-channels
     for i in range(order):
         # From (kernel_size, rank) to (rank, 1, kernel_size)
-        with record_function(f'{i+2} th kernel'):   
-            kernel = tl.transpose(cp_tensor.factors[i+2]).unsqueeze(1)             
-            x = general_conv1d(x.contiguous(), kernel, i+2, stride=stride[i], padding=padding[i], dilation=dilation[i], groups=rank)
+        kernel = tl.transpose(cp_tensor.factors[i+2]).unsqueeze(1)             
+        x = general_conv1d(x.contiguous(), kernel, i+2, stride=stride[i], padding=padding[i], dilation=dilation[i], groups=rank)
 
     # Revert back number of channels from rank to output_channels
     x_shape = list(x.shape)
@@ -280,9 +280,11 @@ def cp_conv(x, cp_tensor, bias=None, stride=1, padding=0, dilation=1):
     # From (out_channels, rank) to (out_channels, in_channels == rank, 1)
     x = x*cp_tensor.weights.unsqueeze(1).unsqueeze(0)
     with record_function("Last kernel"):
+        x_old = x
         x = F.conv1d(x, cp_tensor.factors[0].unsqueeze(2), bias=bias)
-        x_shape[1] = x.shape[1] # = out_channels
-        x = x.reshape(x_shape)
+    x_old
+    x_shape[1] = x.shape[1] # = out_channels
+    x = x.reshape(x_shape)
 
     return x
 

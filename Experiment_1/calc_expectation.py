@@ -46,7 +46,7 @@ def calc_output_image_dim(kernel_size : tuple, stride : tuple, padding : tuple, 
     H = math.floor((in_image[1]  + 2 * padding[1] - dilation[1] * (kernel_size[1] - 1) - 1)/stride[1]+1)
     return (W,H)
 
-def CP_rank_from_compratio(compressionratio : float, in_channel: int, out_channel : int, kernel_size : tuple):
+def CP_rank_from_compratio(compressionratio : float, in_channel: int, out_channel : int, kernel_size : tuple, rounding = "round"):
     """
     Calculates the CP rank from a comporession ratio
 
@@ -60,7 +60,16 @@ def CP_rank_from_compratio(compressionratio : float, in_channel: int, out_channe
     Returns:
         The rank which the CPD needs to have to achieve the desired compression of parameters.
     """
-    rank =  math.floor(compressionratio * in_channel * out_channel * math.prod(kernel_size) / (in_channel + out_channel + sum(kernel_size)))
+    if (rounding == "round"):
+        rounding_fun = round
+    elif (rounding == "ceil"):
+        rounding_fun = math.ceil
+    elif (rounding == "floor"):
+        rounding_fun = math.floor
+    else:
+        raise ValueError(f"Rounding should be round, ceil or floor, but got {rounding} instead")
+
+    rank =  rounding_fun(compressionratio * in_channel * out_channel * math.prod(kernel_size) / (in_channel + out_channel + sum(kernel_size)))
     if (rank == 0):
         return 1
     else:
