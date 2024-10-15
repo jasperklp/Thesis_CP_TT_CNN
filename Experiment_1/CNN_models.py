@@ -28,6 +28,7 @@ class uncomp_model(torch.nn.Module):
         self._bias           = bias
         self._padding_mode   = padding_mode
         self._dtype          = dtype
+        self.name            = "uncomp"
 
 
         self.encoder = torch.nn.Conv2d(in_channels=in_channels
@@ -80,6 +81,7 @@ class cp_tensorly_model(torch.nn.Module):
         self._bias           = bias
         self._padding_mode   = padding_mode
         self._dtype          = dtype
+        self.name            = "CP_tensorly"
 
 
         self.encoder = tltorch.FactorizedConv.from_conv(torch.nn.Conv2d(in_channels,out_channels,kernel_size,stride,padding,dilation,groups,bias,padding_mode,device,dtype)

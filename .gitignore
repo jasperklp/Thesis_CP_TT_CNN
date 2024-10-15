@@ -1,7 +1,7 @@
 #User added to standard Python .gitignore from VSCODE
 *.json
 *.html
-
+.\log
 
 
 
