@@ -48,14 +48,14 @@ def model_runner(model, epochs : int, image_size : int|tuple, device : str = 'cp
 
     if verbose == True:
         print("Start experiment")
-    
+
     with profile(activities=[ProfilerActivity.CPU], 
                  profile_memory=True,
-                 record_shapes=True, 
-                 with_stack=True,
+                 record_shapes=False, 
+                 with_stack=False,
                  on_trace_ready=torch.profiler.tensorboard_trace_handler(f'./log/{model.name}'),
                  #with_flops=True
-                 with_modules=True
+                 with_modules=False
                  ) as prof:
 
             for i in tqdm.tqdm(range(epochs)):
