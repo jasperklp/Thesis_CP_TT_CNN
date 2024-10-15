@@ -3,10 +3,8 @@ import functools
 import numpy as np
 
 #Defaults
-
-bits_per_element_default = 32 #Gives the default number of bits for a memeory operation.
-
-#
+#Gives the default number of bits for a memeory operation.
+bits_per_element_default = 32 
 
 @functools.lru_cache
 def check_int_or_tuple_of_int(value_to_check : int | tuple, name_of_value_to_check : str) -> tuple: 
