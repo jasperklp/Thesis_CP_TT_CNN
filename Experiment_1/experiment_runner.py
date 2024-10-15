@@ -52,8 +52,10 @@ def model_runner(model, epochs : int, image_size : int|tuple, device : str = 'cp
     with profile(activities=[ProfilerActivity.CPU], 
                  profile_memory=True,
                  record_shapes=True, 
-                 with_stack=True #,
-                 #on_trace_ready=torch.profiler.tensorboard_trace_handler(f'./log/{model.name}')
+                 with_stack=True,
+                 on_trace_ready=torch.profiler.tensorboard_trace_handler(f'./log/{model.name}'),
+                 #with_flops=True
+                 with_modules=True
                  ) as prof:
 
             for i in tqdm.tqdm(range(epochs)):
@@ -68,8 +70,8 @@ def model_runner(model, epochs : int, image_size : int|tuple, device : str = 'cp
                         output = model_test(input)
                         end =   time.time()
 
-                with record_function("Output_image"):
-                    output_test = copy.deepcopy(output)
+                # with record_function("Output_image"):
+                #     output_test = copy.deepcopy(output)
 
                 wall_time = end - start
 
@@ -79,8 +81,8 @@ def model_runner(model, epochs : int, image_size : int|tuple, device : str = 'cp
     if verbose == True:
         print(prof.key_averages().table(sort_by="cpu_memory_usage"))
     
-    prof.export_chrome_trace(f"trace{model.name}.json")
-    prof.export_memory_timeline(f"trace2_{model.name}.html")
+    #prof.export_chrome_trace(f"trace{model.name}.json")
+    #prof.export_memory_timeline(f"trace2_{model.name}.html")
 
     return (total_time, prof.key_averages())
 
