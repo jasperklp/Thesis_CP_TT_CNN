@@ -128,7 +128,7 @@ def validate_MAC_or_RAM_calc_input(kernel_size, stride, padding, dilation, image
 
 
 
-def ram_estimation_2d(in_channel : int, out_channel : int, kernel_size : int | tuple, image: int | tuple, method: int | tuple, stride = 1, padding = 1 , dilation = 1, rank=None, bits_per_element : int = bits_per_element_default):
+def ram_estimation_2d(in_channel : int, out_channel : int, kernel_size : int | tuple, image: int | tuple, method: int | tuple, stride = 1, padding = 1 , dilation = 1, rank=None, bits_per_element : int = bits_per_element_default,output_in_bytes : bool = False, output_total : bool = True):
     """
     Inputs certain variables of a convolutional neural layer and outputs the expected required amount of RAM necassary for the kernel and the feature images.
 
@@ -168,8 +168,6 @@ def ram_estimation_2d(in_channel : int, out_channel : int, kernel_size : int | t
         filter_storage_size.append(0)
    
     elif method == 'cp' :
-      
-      
         #Add the storage size for each of the four kernels.
         kernal_storage_size.append(in_channel * rank)
         kernal_storage_size.append(kernel_size[0] * rank)
@@ -180,9 +178,7 @@ def ram_estimation_2d(in_channel : int, out_channel : int, kernel_size : int | t
         filter_storage_size.append(image[0] * image[1] * rank)
         filter_storage_size.append(image[0] * image_out[1] * rank)
         filter_storage_size.append(image_out[0] * image_out[1] * rank)
-        
-   
-   
+          
     elif method == 'tucker':
         raise NotImplementedError
     elif method == 'tt':
@@ -201,7 +197,7 @@ def ram_estimation_2d(in_channel : int, out_channel : int, kernel_size : int | t
 
 
 
-def MAC_estimation_2d(in_channel : int, out_channel : int, kernel_size: int | tuple[int,int], image: int | tuple[int,int], method: int | tuple[int,int], stride: int | tuple[int,int], padding: int | tuple[int,int], dilation: int | tuple[int,int], rank=None):
+def MAC_estimation_2d(in_channel : int, out_channel : int, kernel_size: int | tuple[int,int], image: int | tuple[int,int], method: int | tuple[int,int], stride: int | tuple[int,int], padding: int | tuple[int,int], dilation: int | tuple[int,int], rank=None, output_total : bool = True ):
     """
     Inputs certain variables of a convolutional neural layer and outputs the expected required amount of RAM necassary for the kernel and the feature images.
     Args:
@@ -253,7 +249,7 @@ def MAC_estimation_2d(in_channel : int, out_channel : int, kernel_size: int | tu
     
 #This function passes trough a lot of variables MAC and RAM estimation for CNN's have in common. For an explanation of the inputs see reqested functions.
 
-def MAC_and_ram_estimation_2d(in_channel : int, out_channel : int, kernel_size, image: int | tuple[int,int], method: int | tuple[int,int], stride: int | tuple[int,int], padding: int | tuple[int,int], dilation: int | tuple[int,int], rank=None, bits_per_element : int = bits_per_element_default):
+def MAC_and_ram_estimation_2d(in_channel : int, out_channel : int, kernel_size, image: int | tuple[int,int], method: int | tuple[int,int], stride: int | tuple[int,int], padding: int | tuple[int,int], dilation: int | tuple[int,int], rank=None, bits_per_element : int = bits_per_element_default, output_total : bool = True ,output_in_bytes : bool = False):
     """
     This function gives on interface to get the values from MAC_estimation_2d and ram_estimation_2d
 
