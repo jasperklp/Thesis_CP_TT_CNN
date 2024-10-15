@@ -41,7 +41,6 @@ def calc_output_image_dim(kernel_size : tuple, stride : tuple, padding : tuple, 
     Returns:
         A list containing the output dimension sizes of the 2DConvolution    
     """
-    image_out = []
     W = math.floor((in_image[0]  + 2 * padding[0] - dilation[0] * (kernel_size[0] - 1) - 1)/stride[0]+1)
     H = math.floor((in_image[1]  + 2 * padding[1] - dilation[1] * (kernel_size[1] - 1) - 1)/stride[1]+1)
     return (W,H)
@@ -164,9 +163,6 @@ def ram_estimation_2d(in_channel : int, out_channel : int, kernel_size : int | t
         kernal_storage_size.append(in_channel * out_channel * math.prod(kernel_size))
         filter_storage_size.append(0)
    
-        kernal_storage_size.append(in_channel * out_channel * math.prod(kernel_size))
-        filter_storage_size.append(0)
-   
     elif method == 'cp' :
         #Add the storage size for each of the four kernels.
         kernal_storage_size.append(in_channel * rank)
@@ -226,7 +222,6 @@ def MAC_estimation_2d(in_channel : int, out_channel : int, kernel_size: int | tu
 
     #Based on the input method calculate the number of MACs required.
     if method == 'uncomp':
-        filter_operations.append(kernel_size[0] * kernel_size[1] * in_channel * out_channel * image_out[0] * image_out[1])
         filter_operations.append(kernel_size[0] * kernel_size[1] * in_channel * out_channel * image_out[0] * image_out[1])
     elif method == 'cp':
         #Append the operations per kernel.
