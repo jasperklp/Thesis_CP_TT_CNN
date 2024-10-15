@@ -164,7 +164,11 @@ def ram_estimation_2d(in_channel : int, out_channel : int, kernel_size : int | t
         kernal_storage_size.append(in_channel * out_channel * math.prod(kernel_size))
         filter_storage_size.append(0)
    
+        kernal_storage_size.append(in_channel * out_channel * math.prod(kernel_size))
+        filter_storage_size.append(0)
+   
     elif method == 'cp' :
+      
       
         #Add the storage size for each of the four kernels.
         kernal_storage_size.append(in_channel * rank)
@@ -177,6 +181,7 @@ def ram_estimation_2d(in_channel : int, out_channel : int, kernel_size : int | t
         filter_storage_size.append(image[0] * image_out[1] * rank)
         filter_storage_size.append(image_out[0] * image_out[1] * rank)
         
+   
    
     elif method == 'tucker':
         raise NotImplementedError
@@ -221,9 +226,11 @@ def MAC_estimation_2d(in_channel : int, out_channel : int, kernel_size: int | tu
     #Calculate the output image as it will always have the same shape
     image_out = calc_output_image_dim(kernel_size,stride, padding, dilation, image)
     filter_operations = []
+    filter_operations = []
 
     #Based on the input method calculate the number of MACs required.
     if method == 'uncomp':
+        filter_operations.append(kernel_size[0] * kernel_size[1] * in_channel * out_channel * image_out[0] * image_out[1])
         filter_operations.append(kernel_size[0] * kernel_size[1] * in_channel * out_channel * image_out[0] * image_out[1])
     elif method == 'cp':
         #Append the operations per kernel.
