@@ -142,6 +142,8 @@ def ram_estimation_2d(in_channel : int, out_channel : int, kernel_size : int | t
         dilation: Gives the dilation of the CNN. This could be a tuple of two ints or one int which is applied to both sizes of the input image.
         rank: (defaults None) For method == tt, tucker and cp this is the rank of the decomposition for method = uncompressed this is ignored.
         bits_per_element: (default = 32) This is the amount of bits each numerical element is expected to have e.g. one torch.float32 value takes 32 bits to store
+        output_in_bytes: ((default = False) Defines whether the output is converted from bits to bytes
+        output_total: (default = True) Denotes whether the individual steps are summed to a total. Otherwise the intermediate steps correspond to [input images, [sizes of the kernels], [size of the intermediate filter output results if any], output image]
     Returns:
         The total amount of bits a CNN takes in memory including input image, output image, kernel parameters and if applicable in between output images.
     Raises:
@@ -206,6 +208,7 @@ def MAC_estimation_2d(in_channel : int, out_channel : int, kernel_size: int | tu
         padding: Give the padding of the CNN. This could be a tuple of two ints or one int which is applied to both sides of the input image.
         dilation: Gives the dilation of the CNN. This could be a tuple of two ints or one int which is applied to both sizes of the input image.
         rank: (default is None) This is the rank (or are the ranks of) the cp, tucker and tt decompositions
+        output_total = (default = True) If true sums up the intermediate results otherwise the result is a list in which each enrty represents a kernel.
     Returns:
         The amount of mulitply and add (MAC) operations which are required to calculate such CNN.
     Raises:
@@ -259,6 +262,8 @@ def MAC_and_ram_estimation_2d(in_channel : int, out_channel : int, kernel_size, 
         dilation: Gives the dilation of the CNN. This could be a tuple of two ints or one int which is applied to both sizes of the input image.
         rank: (defaults None) For method == tt, tucker and cp this is the rank of the decomposition for method = uncompressed this is ignored.
         bits_per_element: (default = 32) This is the amount of bits each numerical element is expected to have e.g. one torch.float32 value takes 32 bits to store
+        output_total: (default = True) States whether the results are summed up totals or if there devided as mentioned in the two seperate functions above.
+        output_in_bytes: (default = False) States whether the RAM output shoud be in bits or in bytes.
     Returns:
         A tuple containing the amount of multiply and add operatations and RAM in bits the CNN takes.    
     """
