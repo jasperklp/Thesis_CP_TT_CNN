@@ -1,6 +1,6 @@
 import json
 import fnmatch
-
+import warnings
 
 def name_number(number : int, add_number = True, add_name_size_string = True):
     """
@@ -120,7 +120,6 @@ def get_function_call_for_mem_ref(events):
 
     #Now go though all cpu_op events and link the one that has started but is not yet closed the last before the memory event.
     for j in memory_events:
-        print(j)
         j["Operation name"] = {"name" : "No operation could be assigned."}
         dif_opt = -1
         for i in events:
@@ -141,10 +140,8 @@ def get_function_call_for_mem_ref(events):
             if (dif < dif_opt) | (dif_opt == -1):
                 dif_opt = dif
                 j["Operation name"] = i
-        
         if (dif_opt == -1):
-            print("There are memory operations without an assigned name.")
-        
+            warnings.warn("There are memory events without an assigned cpu operation")
         
 
 def json_get_memory_changes_per_model_ref(data, verbose: bool = True):
@@ -190,12 +187,11 @@ def json_get_memory_changes_per_model_ref(data, verbose: bool = True):
         
         for j in user_events:
             if (i['ts'] > j['ts']) & (i['ts'] < (j['ts'] + j['dur'])):
-                assert added_to_entry == 0
                 j["Memory_event"].append(i)
-                added_to_entry == 1
+                added_to_entry = 1
 
         if added_to_entry == 0:
-            RuntimeWarning("Not all memory events are added to a memory record")
+            warnings.warn("Not all memory events are added to a memory record")
 
     if(verbose == True):
         #Print the outcomes of the memory event.
@@ -203,6 +199,6 @@ def json_get_memory_changes_per_model_ref(data, verbose: bool = True):
         for j in user_events:
             print(f"\t{j["name"]}")
             for i in j["Memory_event"]:
-                print(f"\t\t {name_number(i["args"]["Bytes"])} \t for operation {i["Operation name"]["name"]}")
+                print(f"\t\t{name_number(i["args"]["Bytes"])}\tfor operation {i["Operation name"]["name"]}")
 
                         
