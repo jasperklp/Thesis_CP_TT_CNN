@@ -147,7 +147,7 @@ def get_function_call_for_mem_ref(events):
         
         
 
-def json_get_memory_changes_per_model_ref(data):
+def json_get_memory_changes_per_model_ref(data, verbose == True):
     """
     This function prints the amount of memory per memory record to the terminal.
 
@@ -194,7 +194,7 @@ def json_get_memory_changes_per_model_ref(data):
                 added_to_entry == 1
 
         if added_to_entry == 0:
-            RuntimeWarning("Not all memory events are added to a time")
+            RuntimeWarning("Not all memory events are added to a memory record")
 
     #Print the outcomes of the memory event.
     print("Printing events")
