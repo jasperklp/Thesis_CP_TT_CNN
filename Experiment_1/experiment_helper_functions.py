@@ -156,6 +156,7 @@ def json_get_memory_changes_per_model_ref(data, verbose: bool = True):
 
     Args:
         data: This is the data that is obtained from the JSON file which has to be imported with the JSON.load function.
+        verbose: (default: True) send output to terminal if false data manumpulation could still be done.
     Returns:
         Output to terminal.
     Raises:
