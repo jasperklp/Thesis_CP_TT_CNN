@@ -1,5 +1,5 @@
 import json
-
+import fnmatch
 
 
 def name_number(number : int, add_number = True, add_name_size_string = True):
@@ -95,43 +95,111 @@ def extract_profiler_memory(profiler_output):
     RAM[3] = RAM[2].pop()
     return RAM
 
-def get_function_call_for_mem_ref(data):
-    print(1)
+def get_function_call_for_mem_ref(events):
+    """
+    This function adds the function which requestes/allocates the memory
 
+    This function adds to the dictinary of the memory allocation event, the CPU operation that is summoned last to get more insights in memory allocation
 
+    Args:
+        Events: These are all the events in the trace events element of the Chrome JSON file exports.
+    Returns:
+        Void. Python is by refernce thus the references of the operations are added to the events. 
+    """
+    memory_events = []
+
+    #Obtain a list of memory events
+    for i in events:
+        #All memory events have a name called memory
+        #So if no name is present, go to the next
+        if i.get("name") != "[memory]":
+            continue
+
+        #If all conditions are not met append i
+        memory_events.append(i)
+
+    #Now go though all cpu_op events and link the one that has started but is not yet closed the last before the memory event.
+    for j in memory_events:
+        print(j)
+        j["Operation name"] = {"name" : "No operation could be assigned."}
+        dif_opt = -1
+        for i in events:
+            #If no cpu_op event is not valid
+            if i.get("cat") != "cpu_op":
+                continue
+            
+            #If the memory event happend before or after the cpu_op took place, continue
+            if (i["ts"] > j["ts"]) | (j["ts"] >(i["ts"] + i["dur"])):
+                continue
+
+            #Empty events are not that interesting as they dont't tell that much therefore they're excluded.
+            if fnmatch.fnmatch(i["name"],"*empty*"):
+                continue
+
+            dif = j["ts"] - i["ts"]
+            
+            if (dif < dif_opt) | (dif_opt == -1):
+                dif_opt = dif
+                j["Operation name"] = i
+        
+        if (dif_opt == -1):
+            print("There are memory operations without an assigned name.")
+        
+        
 
 def json_get_memory_changes_per_model_ref(data):
-    
+    """
+    This function prints the amount of memory per memory record to the terminal.
 
-    try :
-        data["profile_memory"]
-    except:
+    This function adds for each memory record a user places. The allocated or deallocated memory to the terminal and adds the caling function with it.
+
+    Args:
+        data: This is the data that is obtained from the JSON file which has to be imported with the JSON.load function.
+    Returns:
+        Output to terminal.
+    Raises:
+        ValueError: If profile_memory is not set to one.
+        RunTimeWarning: If not all memory events are added, because there was no record function to attach it to.
+    """
+    #Check if the memory has been profiled.
+    if(data.get("profile_memory") != 1):
         raise ValueError("Memory is not profiled.")
     
+    #Get events data
     events = data["traceEvents"]
+
+    get_function_call_for_mem_ref(events)
+    
+    #Get the record functions in a list and add extra dictonairy entry
     user_events = []
     for i in events:
         if i.get("cat") is not None :
             if (i['cat'] == "user_annotation"):
+                i["Memory_event"] = []
                 user_events.append(i)           
 
-    for j in user_events:
-        j["Memory_event"] = []
 
+    #For all events. Get the memory events and add them to an enrty
     for i in events:
-        if(i['name'] == "[memory]"):
-            added_to_entry = 0
-            for j in user_events:
-                if (i['ts'] > j['ts']) & (i['ts'] < (j['ts'] + j['dur'])):
-                    assert added_to_entry == 0
-                    j["Memory_event"].append(i)
-                    added_to_entry == 1
-            if added_to_entry == 0:
-                RuntimeWarning("Not all memory events are added to a time")
+        if(i.get("name") != "[memory]"):
+            continue
+        
+        added_to_entry = 0
+        
+        for j in user_events:
+            if (i['ts'] > j['ts']) & (i['ts'] < (j['ts'] + j['dur'])):
+                assert added_to_entry == 0
+                j["Memory_event"].append(i)
+                added_to_entry == 1
 
+        if added_to_entry == 0:
+            RuntimeWarning("Not all memory events are added to a time")
+
+    #Print the outcomes of the memory event.
+    print("Printing events")
     for j in user_events:
-        print(j["name"])
+        print(f"\t{j["name"]}")
         for i in j["Memory_event"]:
-            print(f"\t {i["args"]["Bytes"]}")
+            print(f"\t\t {i["args"]["Bytes"]} \t for operation {i["Operation name"]["name"]}")
 
                         

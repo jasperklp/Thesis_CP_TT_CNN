@@ -35,7 +35,7 @@ if __name__ == "__main__":
 
     
     
-    with open("traceuncomp.json") as json_file:
+    with open("trace_CP_tensorly.json") as json_file:
         data =  json.load(json_file)
         helper.json_get_memory_changes_per_model_ref(data)
 
