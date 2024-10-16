@@ -152,6 +152,7 @@ def json_get_memory_changes_per_model_ref(data):
     This function prints the amount of memory per memory record to the terminal.
 
     This function adds for each memory record a user places. The allocated or deallocated memory to the terminal and adds the caling function with it.
+    If the memory is allocated by a function containing empty then callee of that function is inserted to increase meaning.
 
     Args:
         data: This is the data that is obtained from the JSON file which has to be imported with the JSON.load function.
