@@ -1,3 +1,6 @@
+import json
+
+
 
 def name_number(number : int, add_number = True, add_name_size_string = True):
     """
@@ -91,3 +94,44 @@ def extract_profiler_memory(profiler_output):
                     RAM[2].append(0)
     RAM[3] = RAM[2].pop()
     return RAM
+
+def get_function_call_for_mem_ref(data):
+    print(1)
+
+
+
+def json_get_memory_changes_per_model_ref(data):
+    
+
+    try :
+        data["profile_memory"]
+    except:
+        raise ValueError("Memory is not profiled.")
+    
+    events = data["traceEvents"]
+    user_events = []
+    for i in events:
+        if i.get("cat") is not None :
+            if (i['cat'] == "user_annotation"):
+                user_events.append(i)           
+
+    for j in user_events:
+        j["Memory_event"] = []
+
+    for i in events:
+        if(i['name'] == "[memory]"):
+            added_to_entry = 0
+            for j in user_events:
+                if (i['ts'] > j['ts']) & (i['ts'] < (j['ts'] + j['dur'])):
+                    assert added_to_entry == 0
+                    j["Memory_event"].append(i)
+                    added_to_entry == 1
+            if added_to_entry == 0:
+                RuntimeWarning("Not all memory events are added to a time")
+
+    for j in user_events:
+        print(j["name"])
+        for i in j["Memory_event"]:
+            print(f"\t {i["args"]["Bytes"]}")
+
+                        
