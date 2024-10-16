@@ -12,9 +12,9 @@ def test_check_list_or_int_float_list():
     assert calc_expectation.check_list_or_int_float([1,1]) == [1,1]
 
 def test_check_list_or_int_float_tuple():
-    with pytest.raises(ValueError):
+    with pytest.raises(TypeError):
         calc_expectation.check_list_or_int_float((1,2))
 
 def test_check_list_or_int_float_str():
-    with pytest.raises(ValueError):
+    with pytest.raises(TypeError):
         calc_expectation.check_list_or_int_float('a')

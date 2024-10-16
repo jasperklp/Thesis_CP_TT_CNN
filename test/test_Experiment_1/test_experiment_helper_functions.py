@@ -14,6 +14,9 @@ def test_name_number_size():
 def test_name_number_val():
     assert helper.name_number(1395864371,True, False) == "1.30"
 
+def test_name_numer_negative():
+    assert helper.name_number(-1395864371) == "-1.30Gb"
+
 def test_name_number_no_output():
     with pytest.raises(ValueError):
         helper.name_number(1395864371, False, False)

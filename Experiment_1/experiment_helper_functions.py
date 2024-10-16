@@ -24,7 +24,7 @@ def name_number(number : int, add_number = True, add_name_size_string = True):
 
     name = ["b", "Kb", "Mb", "Gb", "Tb"]
     i = 0
-    while(number > 1024):
+    while(abs(number) > 1024):
         number = number / 1024
         i = i + 1
     
@@ -147,7 +147,7 @@ def get_function_call_for_mem_ref(events):
         
         
 
-def json_get_memory_changes_per_model_ref(data, verbose == True):
+def json_get_memory_changes_per_model_ref(data, verbose: bool = True):
     """
     This function prints the amount of memory per memory record to the terminal.
 
@@ -196,11 +196,12 @@ def json_get_memory_changes_per_model_ref(data, verbose == True):
         if added_to_entry == 0:
             RuntimeWarning("Not all memory events are added to a memory record")
 
-    #Print the outcomes of the memory event.
-    print("Printing events")
-    for j in user_events:
-        print(f"\t{j["name"]}")
-        for i in j["Memory_event"]:
-            print(f"\t\t {i["args"]["Bytes"]} \t for operation {i["Operation name"]["name"]}")
+    if(verbose == True):
+        #Print the outcomes of the memory event.
+        print("Printing events")
+        for j in user_events:
+            print(f"\t{j["name"]}")
+            for i in j["Memory_event"]:
+                print(f"\t\t {name_number(i["args"]["Bytes"])} \t for operation {i["Operation name"]["name"]}")
 
                         
