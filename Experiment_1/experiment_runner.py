@@ -82,6 +82,29 @@ def model_runner(model, epochs : int, image_size : int|tuple, device : str = 'cp
     
     prof.export_chrome_trace(f"trace_{model.name}.json")
 
+    # output = {
+    #     "model_name"    : model.name,
+    #     "model_type"    : model.
+    #     "in_channels"   : in_channels,
+    #     "out_channels"  : out_channels,
+    #     "kernel_size"   : kernel_size,
+    #     "padding"       : padding,
+    #     "stride"        : stride,
+    #     "rank"          : rank,
+    #     "image_size"    : image_size,
+
+    #     "measurement_start_time"    : start_time,
+    #     "measurement_end_time"   	: end_time,
+
+    #     "Inference duration" : inf_time
+    #     "Expected MAC"  : MAC,
+    #     "Expected RAM"  : RAM,
+    #     "Total allocated RAM" : total_allocated_RAM,
+    #     "Peak allocated RAM"  : peak_ram,
+    #     "Filter per model"    : filter_per_model,
+        
+    # }
+    
     return (total_time, prof.key_averages())
 
 
