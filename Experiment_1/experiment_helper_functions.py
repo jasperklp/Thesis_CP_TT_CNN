@@ -143,6 +143,61 @@ def get_function_call_for_mem_ref(events):
         if (dif_opt == -1):
             warnings.warn("There are memory events without an assigned cpu operation")
         
+def add_start_end_and_in_between_events(user_events, add_start_event :bool = True, add_end_event: bool = True, add_in_between_events: bool = True):
+    """
+    Creates a before event, after event and in between event for all user defined events.
+
+    Args:
+        user_events: All the record function events from the JSON file
+        start_event: (default == True) If true add start event
+        end_event: (default == True) If true addes end event
+        in_between_events: (default == True) If true adds in between events
+    Returns:
+        user_events: It returns the inserted user events.
+    Raises:
+        waring --> If two userfunctions overlap.
+        A way to handle this is not implemented.
+    """
+
+    events_to_add = []
+
+    #Make sure that the user events are sorted in a time order.
+    user_events = sorted(user_events, key=lambda x:x["ts"])
+
+    if add_in_between_events == True:
+        in_between_events = [{"cat" : "user_annotation",
+                            "name" : f"Between {user_events[i]["name"]} and {user_events[i+1]["name"]}",
+                            "ts" : user_events[i]["ts"] + user_events[i]["dur"] + 0.001,
+                            "dur" : user_events[i+1]["ts"] - (user_events[i]["ts"] + user_events[i]["dur"])-0.002,
+                            "Memory_event": []
+
+            } for i in range(len(user_events)- 1)
+
+        ]
+
+        events_to_add.extend(in_between_events)
+    
+    #Append a start event before the first event
+    if add_start_event == True:
+        events_to_add.append({"cat" : "user_annotation",
+                "name" : "Start",
+                "ts"   : 0,
+                "dur" : user_events[0]["ts"],
+                "Memory_event" : [],
+                })
+    
+    #Append a end event after the last event.
+    if add_end_event == True:
+        events_to_add.append({"cat" : "user_annotation",
+                "name" : "End",
+                "ts"   : user_events[-1]["ts"] + user_events[-1]["dur"]+0.001,
+                "dur" : user_events[-1]["ts"],
+                "Memory_event" : [],
+                })
+
+    #Make sure that the user events are sorted in a time order.
+    return sorted(user_events + events_to_add, key=lambda x:x["ts"])
+                        
 
 def json_get_memory_changes_per_model_ref(data, verbose: bool = True):
     """
@@ -175,8 +230,9 @@ def json_get_memory_changes_per_model_ref(data, verbose: bool = True):
         if i.get("cat") is not None :
             if (i['cat'] == "user_annotation"):
                 i["Memory_event"] = []
-                user_events.append(i)           
+                user_events.append(i)
 
+    user_events = add_start_end_and_in_between_events(user_events)
 
     #For all events. Get the memory events and add them to an enrty
     for i in events:
@@ -186,7 +242,7 @@ def json_get_memory_changes_per_model_ref(data, verbose: bool = True):
         added_to_entry = 0
         
         for j in user_events:
-            if (i['ts'] > j['ts']) & (i['ts'] < (j['ts'] + j['dur'])):
+            if (i['ts'] >= j['ts']) & (i['ts'] <= (j['ts'] + j['dur'])):
                 j["Memory_event"].append(i)
                 added_to_entry = 1
 
@@ -202,6 +258,8 @@ def json_get_memory_changes_per_model_ref(data, verbose: bool = True):
             for i in j["Memory_event"]:
                 print(f"\t\t{name_number(i["args"]["Bytes"])}\tfor operation {i["Operation name"]["name"]}")
 
+        get_peak_and_total_alloc_memory(events,True)
+
 
 def get_peak_and_total_alloc_memory(events, verbose = False):
     """
@@ -209,6 +267,7 @@ def get_peak_and_total_alloc_memory(events, verbose = False):
 
     This function obtains the total sum of all allocations, which is called the total allocated memory. 
     Additionally, this function also finds the maximum amount of memory that was assigned in a single time instance.
+    During the operations, thus all memory which is allocated before the first recorded memory event is omitted.
 
     Args:
         events: These are the memory events considered (all non-memory events are filtered)
@@ -218,12 +277,20 @@ def get_peak_and_total_alloc_memory(events, verbose = False):
     """
     peak_memory = 0
     total_alloc_memory = 0
+    ts = -1
+    offset = 0
     
     for i in events:
         #Filters out the memory events
         if i.get("name") != "[memory]":
             continue
-        
+
+        #Sometimes memory is already allocated before the run. This does not count towards the result of the model. 
+        #And will thus be deducted.
+        if (ts == -1) | (i["ts"] < ts) : 
+            ts = i["ts"]
+            offset =  i["args"]["Total Allocated"] - i["args"]["Bytes"]
+
         #Obtains the peak value
         if peak_memory < i["args"]["Total Allocated"]:
             peak_memory = i["args"]["Total Allocated"]
@@ -232,10 +299,11 @@ def get_peak_and_total_alloc_memory(events, verbose = False):
         if i["args"]["Bytes"] > 0:
             total_alloc_memory += i["args"]["Bytes"]
     
+    peak_memory = peak_memory - offset
+
     if verbose == True:
-        print(f"Total allocated memory = {total_alloc_memory}")
-        print(f"Peak memory = {peak_memory}")
+        print(f"Total allocated memory = {name_number(total_alloc_memory)}")
+        print(f"Peak memory = {name_number(peak_memory)}")
     
     return (peak_memory, total_alloc_memory)
 
-                        

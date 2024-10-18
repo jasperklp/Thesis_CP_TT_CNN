@@ -65,10 +65,9 @@ def model_runner(model, epochs : int, image_size : int|tuple, device : str = 'cp
                 with record_function("model_size"):
                     model_test = copy.deepcopy(model)
                 with torch.no_grad():
-                    with record_function("model_inference"):
-                        start = time.time()
-                        output = model_test(input)
-                        end =   time.time()
+                    start = time.time()
+                    output = model_test(input)
+                    end =   time.time()
 
                 # with record_function("Output_image"):
                 #     output_test = copy.deepcopy(output)
@@ -82,7 +81,6 @@ def model_runner(model, epochs : int, image_size : int|tuple, device : str = 'cp
         print(prof.key_averages().table(sort_by="cpu_memory_usage"))
     
     prof.export_chrome_trace(f"trace_{model.name}.json")
-    #prof.export_memory_timeline(f"trace2_{model.name}.html")
 
     return (total_time, prof.key_averages())
 
