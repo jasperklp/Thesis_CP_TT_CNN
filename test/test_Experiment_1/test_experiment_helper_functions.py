@@ -52,3 +52,12 @@ def test_json_memory_events_succesful(capsys):
         helper.json_get_memory_changes_per_model_ref(data)
     captured = capsys.readouterr()
     assert captured.out == f"Printing events\n\t{events[0]["name"]}\n\t\t{helper.name_number(events[3]["args"]["Bytes"])}\tfor operation {events[1]["name"]}\n"
+
+def test_get_total_alloc_and_bytes():
+    with open(".//test//test_Experiment_1//test_json_3.json") as json_file:
+        data = json.load(json_file)
+        events = data["traceEvents"]
+        (peak_memory, total_alloc) = helper.get_peak_and_total_alloc_memory(events)
+    
+    assert total_alloc == 36416
+    assert peak_memory == 4227196

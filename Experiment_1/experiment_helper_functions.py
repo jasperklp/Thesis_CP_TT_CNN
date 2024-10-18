@@ -192,6 +192,7 @@ def json_get_memory_changes_per_model_ref(data, verbose: bool = True):
 
         if added_to_entry == 0:
             warnings.warn("Not all memory events are added to a memory record")
+            print(i)
 
     if(verbose == True):
         #Print the outcomes of the memory event.
@@ -200,5 +201,41 @@ def json_get_memory_changes_per_model_ref(data, verbose: bool = True):
             print(f"\t{j["name"]}")
             for i in j["Memory_event"]:
                 print(f"\t\t{name_number(i["args"]["Bytes"])}\tfor operation {i["Operation name"]["name"]}")
+
+
+def get_peak_and_total_alloc_memory(events, verbose = False):
+    """
+    This function obtains the total allocated memory and peak allocated memory.
+
+    This function obtains the total sum of all allocations, which is called the total allocated memory. 
+    Additionally, this function also finds the maximum amount of memory that was assigned in a single time instance.
+
+    Args:
+        events: These are the memory events considered (all non-memory events are filtered)
+        verbose: (default = False) If True the function prints the peak allocated memory and the total allocated memory.
+    Returns:
+        A tuple containing the peak allocated memory and total allocated memory.
+    """
+    peak_memory = 0
+    total_alloc_memory = 0
+    
+    for i in events:
+        #Filters out the memory events
+        if i.get("name") != "[memory]":
+            continue
+        
+        #Obtains the peak value
+        if peak_memory < i["args"]["Total Allocated"]:
+            peak_memory = i["args"]["Total Allocated"]
+
+        #If it is an allocation the amount of bytes is positive. Hence only those values are added.
+        if i["args"]["Bytes"] > 0:
+            total_alloc_memory += i["args"]["Bytes"]
+    
+    if verbose == True:
+        print(f"Total allocated memory = {total_alloc_memory}")
+        print(f"Peak memory = {peak_memory}")
+    
+    return (peak_memory, total_alloc_memory)
 
                         

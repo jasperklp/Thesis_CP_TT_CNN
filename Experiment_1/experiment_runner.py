@@ -65,10 +65,10 @@ def model_runner(model, epochs : int, image_size : int|tuple, device : str = 'cp
                 with record_function("model_size"):
                     model_test = copy.deepcopy(model)
                 with torch.no_grad():
-                    #with record_function("model_inference"):
-                    start = time.time()
-                    output = model_test(input)
-                    end =   time.time()
+                    with record_function("model_inference"):
+                        start = time.time()
+                        output = model_test(input)
+                        end =   time.time()
 
                 # with record_function("Output_image"):
                 #     output_test = copy.deepcopy(output)

@@ -10,3 +10,8 @@ def test_for_cp_model():
     model_1 = CNN_models.cp_tensorly_model(256,256,3, rank = 0.5)
     MAC,RAM = model_1.MAC_and_RAM(4)
     runner.model_runner(model_1, 100, 4, verbose=True)
+
+def test_for_GIL_model():
+    model_1 = CNN_models.cp_GIL_model(256,256,3, rank = 0.5)
+    MAC,RAM = model_1.MAC_and_RAM(4)
+    runner.model_runner(model_1, 100, 4, verbose=True)
