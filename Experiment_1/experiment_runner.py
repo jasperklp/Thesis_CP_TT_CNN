@@ -3,17 +3,23 @@ import numpy as np
 import calc_expectation
 import CNN_models
 import time
+import datetime
 import tqdm
 import random
 import copy
 from torch.profiler import profile, record_function, ProfilerActivity
 import os
+import json
 from pathlib import Path
+import experiment_helper_functions as helper
 chosen_seed = 100
 
 
 
 def model_runner(model, epochs : int, image_size : int|tuple, device : str = 'cpu', verbose : bool = False):
+    [start_date,start_time] = f"{datetime.datetime.now()}".split()
+    start_time = start_time.replace(":",".")
+    
     if verbose == True:
         print(f"Running a model")
 
@@ -23,9 +29,10 @@ def model_runner(model, epochs : int, image_size : int|tuple, device : str = 'cp
         raise TypeError(r'Model should be an instance of a subclass of torch.nn.Module')
     
     try:
-        in_channels, out_channels = model.get_in_and_out_channels()
+        model_information = model.get_output_data()
+        in_channels = model_information["in_channels"]
     except: 
-        raise AttributeError("Could not get in and out channel from model using get_in_and_out_channels method")
+        raise AttributeError("Could not get model information")
     
     if (verbose == True):
         print("Model's state_dict:")
@@ -80,32 +87,54 @@ def model_runner(model, epochs : int, image_size : int|tuple, device : str = 'cp
     if verbose == True:
         print(prof.key_averages().table(sort_by="cpu_memory_usage"))
     
-    prof.export_chrome_trace(f"trace_{model.name}.json")
+    print(start_time)
+    tracefile = f"{os.getcwd()}\\data\\data_raw\\{start_date}_{start_time}_{model.name}.json"
+    prof.export_chrome_trace(tracefile)
 
-    # output = {
-    #     "model_name"    : model.name,
-    #     "model_type"    : model.
-    #     "in_channels"   : in_channels,
-    #     "out_channels"  : out_channels,
-    #     "kernel_size"   : kernel_size,
-    #     "padding"       : padding,
-    #     "stride"        : stride,
-    #     "rank"          : rank,
-    #     "image_size"    : image_size,
+    [end_date,end_time] = f"{datetime.datetime.now()}".split()
+    end_time = end_time.replace(":",".")
 
-    #     "measurement_start_time"    : start_time,
-    #     "measurement_end_time"   	: end_time,
 
-    #     "Inference duration" : inf_time
-    #     "Expected MAC"  : MAC,
-    #     "Expected RAM"  : RAM,
-    #     "Total allocated RAM" : total_allocated_RAM,
-    #     "Peak allocated RAM"  : peak_ram,
-    #     "Filter per model"    : filter_per_model,
-        
-    # }
     
-    return (total_time, prof.key_averages())
+
+    #Create model output
+    output = {
+        "model_name"    : model.name,
+        "model_type"    : model.model_type,
+        "in_channels"   : model_information.get("in_channels"),
+        "out_channels"  : model_information.get("out_channels"),
+        "kernel_size"   : model_information.get("kernel_size"),
+        "stride"        : model_information.get("stride"),
+        "padding"       : model_information.get("padding"),
+        "image_size"    : image_size,
+
+        "measurement_start_time"    : [start_date, start_time],
+        "measurement_end_time"   	: [end_date, end_time],
+
+        "Inference duration" : total_time        
+    }
+
+    [expected_MAC, expected_RAM] = model.MAC_and_RAM(image_size, True, False)
+    [expected_MAC_total, expected_RAM_total] = model.MAC_and_RAM(image_size, True, True)
+
+    output["Expected MAC"] = expected_MAC
+    output["Expected MAC total"] = expected_MAC_total
+    output["Expected RAM"] = expected_RAM
+    output["Expected RAM total"] = expected_RAM_total
+
+    if output.get("modeltype") == "cp":
+        output["rank"]      = model_information.get("rank")
+        output["rank_int"]  = model_information.get("rank_int")
+    
+    json_file = open(tracefile)
+    data = json.load(json_file)
+    events = data["traceEvents"]
+    (output["Peak allocated RAM"],output["Total allocated RAM"]) = helper.get_peak_and_total_alloc_memory(events)
+    output["Filter per model"] = helper.json_get_memory_changes_per_model_ref(data,True)
+    json_file.close()
+
+
+    return (output)
 
 
 

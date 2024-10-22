@@ -1,6 +1,7 @@
 import json
 import fnmatch
 import warnings
+import copy
 
 def name_number(number : int, add_number = True, add_name_size_string = True):
     """
@@ -199,7 +200,7 @@ def add_start_end_and_in_between_events(user_events, add_start_event :bool = Tru
     return sorted(user_events + events_to_add, key=lambda x:x["ts"])
                         
 
-def json_get_memory_changes_per_model_ref(data, verbose: bool = True):
+def json_get_memory_changes_per_model_ref(data, verbose: bool = False):
     """
     This function prints the amount of memory per memory record to the terminal.
 
@@ -208,9 +209,13 @@ def json_get_memory_changes_per_model_ref(data, verbose: bool = True):
 
     Args:
         data: This is the data that is obtained from the JSON file which has to be imported with the JSON.load function.
-        verbose: (default: True) send output to terminal if false data manumpulation could still be done.
+        verbose: (default: False) send output to terminal if false data manipulation could still be done.
     Returns:
-        Output to terminal.
+        A list containing dictionaries of all memory record events and user created events in between. Aside from this name, a list of memory events is included this list contains summary of the memory event.
+        The structure overview is shown below
+        [Record function and inbetween dicts] 
+        dicts --> {"name of record function" ,[memory event list]}
+        [memory event list] --> {Bytes:int, "name of function if determined", Address : int}
     Raises:
         ValueError: If profile_memory is not set to one.
         RunTimeWarning: If not all memory events are added, because there was no record function to attach it to.
@@ -258,7 +263,21 @@ def json_get_memory_changes_per_model_ref(data, verbose: bool = True):
             for i in j["Memory_event"]:
                 print(f"\t\t{name_number(i["args"]["Bytes"])}\tfor operation {i["Operation name"]["name"]}")
 
-        get_peak_and_total_alloc_memory(events,True)
+    output = []
+    for j in user_events:
+        event_item = {}
+        event_item["name"] = copy.deepcopy(j["name"])
+        event_item["Events"] = []
+        for i in j["Memory_event"]:
+            memory_event = {}
+            memory_event["Bytes"] = copy.deepcopy(i["args"]["Bytes"])
+            memory_event["Operation name"] = copy.deepcopy(i["Operation name"]["name"])
+            memory_event["Adress"] = copy.deepcopy(i["args"]["Addr"])
+            event_item["Events"].append(memory_event)
+        output.append(event_item)
+
+    return output
+
 
 
 def get_peak_and_total_alloc_memory(events, verbose = False):
@@ -305,5 +324,5 @@ def get_peak_and_total_alloc_memory(events, verbose = False):
         print(f"Total allocated memory = {name_number(total_alloc_memory)}")
         print(f"Peak memory = {name_number(peak_memory)}")
     
-    return (peak_memory, total_alloc_memory)
+    return peak_memory, total_alloc_memory
 

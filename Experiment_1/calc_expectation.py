@@ -7,7 +7,7 @@ import numpy as np
 bits_per_element_default = 32 
 
 @functools.lru_cache
-def check_int_or_tuple_of_int(value_to_check : int | tuple, name_of_value_to_check : str) -> tuple: 
+def check_int_or_tuple_of_int(value_to_check : int | tuple, name_of_value_to_check : str = None) -> tuple: 
     """
     Checker for input which expects tuple or int
 
