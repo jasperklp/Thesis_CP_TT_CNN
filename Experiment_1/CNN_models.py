@@ -45,6 +45,14 @@ class uncomp_model(torch.nn.Module):
                                        , device = device
                                        , dtype=dtype
                                        , groups=groups)
+    def get_output_data(self):
+        return {"in_channels"   : self._in_channels,
+                "out_channels"  : self._out_channels,
+                "kernel_size"   : calc_expectation.check_int_or_tuple_of_int(self._kernel_size),
+                "stride"        : calc_expectation.check_int_or_tuple_of_int(self._stride),
+                "padding"       : calc_expectation.check_int_or_tuple_of_int(self._padding),
+                "dtype"         : self._dtype,
+                }
     
     def get_in_and_out_channels(self):
         return (self._in_channels, self._out_channels)

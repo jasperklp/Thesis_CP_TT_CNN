@@ -14,8 +14,8 @@ def cp_decomposition_conv_layer(layer, rank):
         returns a nn.Sequential object with the decomposition """
 
     # Perform CP decomposition on the layer weight tensorly. 
-    print(layer.weight.data.size())
-    print(f'Rank = {rank}')
+    #print(layer.weight.data.size())
+    #print(f'Rank = {rank}')
     cp_weight, cp_factors = \
         parafac(layer.weight.data, rank=rank, init='random')
     
@@ -24,10 +24,10 @@ def cp_decomposition_conv_layer(layer, rank):
     vertical = cp_factors[2]
     horizontal = cp_factors[3]
 
-    print(last.size())
-    print(first.size())
-    print(vertical.size())
-    print(horizontal.size())
+    #print(last.size())
+    #print(first.size())
+    #print(vertical.size())
+    #print(horizontal.size())
 
     
     pointwise_s_to_r_layer = torch.nn.Conv2d(in_channels=first.shape[0], \

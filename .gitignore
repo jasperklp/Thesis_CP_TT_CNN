@@ -2,7 +2,7 @@
 *.json
 *.html
 .\log
-
+data/**
 
 
 #VSCode folder

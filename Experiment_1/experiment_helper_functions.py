@@ -2,6 +2,10 @@ import json
 import fnmatch
 import warnings
 import copy
+import datetime
+import logging
+
+logger = logging.getLogger(__name__)
 
 def name_number(number : int, add_number = True, add_name_size_string = True):
     """
@@ -120,6 +124,7 @@ def get_function_call_for_mem_ref(events):
         memory_events.append(i)
 
     #Now go though all cpu_op events and link the one that has started but is not yet closed the last before the memory event.
+    all_memory_events_are_good = True
     for j in memory_events:
         j["Operation name"] = {"name" : "No operation could be assigned."}
         dif_opt = -1
@@ -142,7 +147,11 @@ def get_function_call_for_mem_ref(events):
                 dif_opt = dif
                 j["Operation name"] = i
         if (dif_opt == -1):
-            warnings.warn("There are memory events without an assigned cpu operation")
+            #warnings.warn("There are memory events without an assigned cpu operation")
+            all_memory_events_are_good = False
+        
+    # if all_memory_events_are_good == False:
+    #     logger.warning("There are memory events without an assigned cpu operation")
         
 def add_start_end_and_in_between_events(user_events, add_start_event :bool = True, add_end_event: bool = True, add_in_between_events: bool = True):
     """
@@ -240,6 +249,7 @@ def json_get_memory_changes_per_model_ref(data, verbose: bool = False):
     user_events = add_start_end_and_in_between_events(user_events)
 
     #For all events. Get the memory events and add them to an enrty
+    all_memory_events_are_added_to_a_record = True
     for i in events:
         if(i.get("name") != "[memory]"):
             continue
@@ -253,7 +263,10 @@ def json_get_memory_changes_per_model_ref(data, verbose: bool = False):
 
         if added_to_entry == 0:
             warnings.warn("Not all memory events are added to a memory record")
+            all_memory_events_are_added_to_a_record = False
             print(i)
+    if all_memory_events_are_added_to_a_record == False:
+        logger.warning("Not all memory events are added to a memory record")
 
     if(verbose == True):
         #Print the outcomes of the memory event.
@@ -325,4 +338,12 @@ def get_peak_and_total_alloc_memory(events, verbose = False):
         print(f"Peak memory = {name_number(peak_memory)}")
     
     return peak_memory, total_alloc_memory
+
+
+def get_date_time(delete_microseconds : bool = False):
+    [date, time] = f"{datetime.datetime.now()}".split()
+    if delete_microseconds == True:
+        [time, _] = time.split(".")
+    time = time.replace(":",".")
+    return (date , time)
 
