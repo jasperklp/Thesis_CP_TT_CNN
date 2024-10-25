@@ -101,7 +101,6 @@ class cp_tensorly_model(torch.nn.Module):
         self.name            = "CP_tensorly"
         self.model_type      = "cp"
 
-
         self.encoder = tltorch.FactorizedConv.from_conv(torch.nn.Conv2d(in_channels,out_channels,kernel_size,stride,padding,dilation,groups,bias,padding_mode,device,dtype)
                                                         ,rank
                                                         ,implementation = implementation

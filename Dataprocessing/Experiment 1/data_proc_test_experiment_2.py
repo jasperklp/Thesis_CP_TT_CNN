@@ -2,7 +2,7 @@ import os
 import json
 import matplotlib.pyplot as plt 
 file = "2024-10-22_16.06.40"
-import utils
+import Dataprocessing.dataproc_utils as dataproc_utils
 
 with open(f"{os.getcwd()}\\data\\data\\test_experiment_2\\{file}.json") as json_file:
     data = json.load(json_file)

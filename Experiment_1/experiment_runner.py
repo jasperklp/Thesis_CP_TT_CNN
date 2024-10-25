@@ -32,7 +32,13 @@ def model_runner(model, epochs : int, image_size : int|tuple, device : str = 'cp
     except: 
         raise AttributeError("Could not get model information")
 
-    logger.info(f"Model is {model.name} with settings in_channels = {model_information["in_channels"]} , out_channels = {model_information["in_channels"]}, kernel_size = {model_information["kernel_size"]}")
+    logger.info(f"Model is {model.name} with settings:  \
+                \n \t in_channels ={model_information["in_channels"]} , \
+                \n \t out_channels = {model_information["in_channels"]}, \
+                \n \t kernel_size = {model_information["kernel_size"]},\
+                \n \t padding = {model_information["padding"]},\
+                \n \t image_size = {image_size}\n"
+               )
 
     if model_information.get("rank") != None:
         logger.info(f"Rank = {model_information["rank"]}")
