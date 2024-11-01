@@ -262,7 +262,7 @@ def cp_conv(x, cp_tensor, bias=None, stride=1, padding=0, dilation=1):
     # First conv == tensor contraction
     # from (in_channels, rank) to (rank == out_channels, in_channels, 1)
     with record_function("Filter_image 1"):
-        x = F.conv1d(x, tl.transpose(cp_tensor.factors[1]).unsqueeze(2))
+        x = F.conv1d(x.to_mkldnn(), tl.transpose(cp_tensor.factors[1]).unsqueeze(2))
 
     x_shape[1] = rank
     x = x.reshape(x_shape)
@@ -278,7 +278,9 @@ def cp_conv(x, cp_tensor, bias=None, stride=1, padding=0, dilation=1):
     x = x.reshape((batch_size, x_shape[1], -1))                
     # Last conv == tensor contraction
     # From (out_channels, rank) to (out_channels, in_channels == rank, 1)
-    x = x*cp_tensor.weights.unsqueeze(1).unsqueeze(0)
+    #x = x*cp_tensor.weights.unsqueeze(1).unsqueeze(0).to_mkldnn()
+    print(x.size())
+    print(cp_tensor.factors[0].unsqueeze(2).size())
     with record_function("Filter_image 4"):
         x_old = x
         x = F.conv1d(x, cp_tensor.factors[0].unsqueeze(2), bias=bias)

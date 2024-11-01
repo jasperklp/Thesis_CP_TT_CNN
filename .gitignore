@@ -3,7 +3,8 @@
 *.html
 .\log
 data/**
-
+*.pdf
+*.xlsx
 
 #VSCode folder
 .vscode/
