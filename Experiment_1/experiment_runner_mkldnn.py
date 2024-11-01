@@ -65,6 +65,11 @@ def model_runner(model, epochs : int, image_size : int|tuple, device : str = 'cp
         torch.backends.cudnn.deterministic == False
     torch.use_deterministic_algorithms(True)
 
+    torch.backends.mkldnn.enabled = True
+
+    for param in model.state_dict():
+        model.state_dict()[param] =  model.state_dict()[param].to_mkldnn()
+    
 
     if verbose == True:
         print("Start experiment")
@@ -85,7 +90,7 @@ def model_runner(model, epochs : int, image_size : int|tuple, device : str = 'cp
                     np.random.seed(chosen_seed)
                     
                     with record_function("Input_image"):
-                        input = torch.randn(1,in_channels, image_size[0], image_size[1],dtype=torch.float32)
+                        input = torch.randn(1,in_channels, image_size[0], image_size[1],dtype=torch.float32).to_mkldnn()
                     with record_function("model_size"):
                         model_test = copy.deepcopy(model)
                     

@@ -351,3 +351,86 @@ def get_theoretical_dataset_for_plot(in_channels: list, out_channels: list, kern
     
     return data
     
+def get_mulitple_of_SIMD(value, SIMD_size):
+    if (value % SIMD_size) == 0:
+        return value
+    else:
+        return (value//SIMD_size + 1)*SIMD_size
+
+
+def get_mkldnn_ram(in_channel, out_channel, kernel_size, image, method, stride, padding, dilation, rank = None, output_total:bool = True, bytes_per_float = 4,SIMD_size : int = 8):
+    #Check input parameters which could ether be an int or a tuple of ints.
+    [kernel_size, stride, padding, dilation, image, rank] = validate_MAC_or_RAM_calc_input(kernel_size, stride, padding, dilation, image, method, rank, in_channel, out_channel)
+    #Calculate the output image as it will always have the same shape
+    image_out = calc_output_image_dim(kernel_size,stride, padding, dilation, image)
+    
+    if "method" == "uncomp":
+        input_image = in_channel * math.prod(image)
+        kernel_size = in_channel *  out_channel * math.prod(kernel_size)
+        output_image = out_channel * math.prod(image_out)
+
+
+        Filter_1 = []
+
+        Input_image = math.sum([input_image,input_image])
+        Model_size = math.sum([kernel_size])
+        Filter_1.append(get_mulitple_of_SIMD(in_channel)*math.prod(image))
+        Filter_1.append(get_mulitple_of_SIMD(out_channel)*get_mulitple_of_SIMD(in_channel))
+        Filter_1.append(get_mulitple_of_SIMD(out_channel)*math.prod(output_image))
+
+        output = [Input_image, Model_size, sum(Filter_1)]     
+
+        if output_total == True:
+            return sum(output)*bytes_per_float
+        else:
+            output = [i * bytes_per_float for i in output]
+            return output
+
+    if "method" == "cp":
+        input_image = in_channel * math.prod(image)
+        kernel_size = in_channel *  out_channel * math.prod(kernel_size)
+        output_image = out_channel * math.prod(image_out)
+
+
+        Filter_1 = []
+        Between_filter_1_and_2 = []
+        Filter_2 = []
+        Between_filter_2_and_3 = []
+        Filter_3 = []
+        Between_filter_3_and_4 = []
+        Filter_4 = []
+
+        Input_image = math.sum([input_image,input_image])
+        Model_size = math.sum([kernel_size])
+
+        Filter_1.append(get_mulitple_of_SIMD(in_channel) *  math.prod(image)) #Copy input image
+        Filter_1.append(get_mulitple_of_SIMD(rank)*get_mulitple_of_SIMD(in_channel)*math.prod(image)) #Copy Kernel
+        Filter_1.append(get_mulitple_of_SIMD(rank)*math.prod(image)) #Convolution
+
+        Between_filter_1_and_2.append(rank*math.prod(image)) #reshape
+
+        Filter_2.append(rank *kernel_size[0]) #Copy kernel
+        Filter_2.append(get_mulitple_of_SIMD(rank)*math.prod(image)) #Reshape image
+        Filter_2.append(get_mulitple_of_SIMD(rank)*kernel_size[0]) #Reshape filter 2 kernel
+        Filter_2.append(get_mulitple_of_SIMD(rank) * image_out[0] * image[1])
+
+        Filter_3.append(rank*kernel_size[1]) #Copy kernel
+        Filter_3.append(get_mulitple_of_SIMD(rank)*kernel_size[1]) #Reshape kernel
+        Filter_3.append(get_mulitple_of_SIMD(rank)*math.prod(image_out)) #Convolution
+        
+        Between_filter_3_and_4.append(rank*math.prod(image_out)) #Reshape output image to non-SIMD form
+
+        Filter_4.append(get_mulitple_of_SIMD(rank)*math.prod(image_out)) #Reshape image
+        Filter_4.append(get_mulitple_of_SIMD(out_channel)*get_mulitple_of_SIMD(rank)) #Reshape kernel
+        Filter_4.append(get_mulitple_of_SIMD(out_channel)*math.prod(output_image))
+
+        output = [Input_image,Model_size, Filter_1, Between_filter_1_and_2, Filter_2, Between_filter_2_and_3, Filter_3, Between_filter_3_and_4, Filter_4]
+
+        output = [sum(i)*bytes_per_float for i in output if i != None]
+
+        if output_total == True:
+            return sum(output)
+        else:
+            return output
+
+    raise ValueError("Method must be uncomp or CP")

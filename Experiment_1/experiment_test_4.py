@@ -1,4 +1,4 @@
-import experiment_runner as runner
+import experiment_runner_mkldnn as runner
 import experiment_helper_functions as helper
 import CNN_models
 import torch
@@ -7,12 +7,12 @@ import datetime
 import os
 import logging
 
-in_channels = 8
-out_channels = 8
-kernel_size = (3,3)
+in_channels = 9
+out_channels = 17
+kernel_size = (3,5)
 epochs      = 1
-image_size = 10
-padding = (1,1)
+image_size = (10,20)
+padding = (0,0)
 c = [8]
 
 experiment_results = {"Measured value" : "Rank", "Measured range" : c}
