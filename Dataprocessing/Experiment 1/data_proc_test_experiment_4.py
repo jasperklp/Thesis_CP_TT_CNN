@@ -6,7 +6,7 @@ import sys
 #Adds root of thesis folder to sys path.
 sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 
-file = "2024-11-01_13.11.32"
+file = "2024-11-01_16.26.58"
 import Dataprocessing.dataproc_utils as dataproc_utils
 
 with open(f"{os.getcwd()}\\data\\data\\test_experiment_4\\{file}.json") as json_file:
@@ -49,6 +49,7 @@ for i in uncomp_data:
 for i in cp_tensorly_data:
     expected_memory_cp.append(i["Expected RAM total"] / (1024**2))
     measured_event_memory = 0
+    print(i["Expected RAM"])
     for j in i["measurements"]:
         measured_event_memory += j["Total allocated RAM"] / (1024**2)
     measured_memory_cp.append(measured_event_memory/i["nr of measurements"])
@@ -67,6 +68,10 @@ plt.legend(["Expected uncomporessed","Expected CP", "Measured uncompressed", "Me
 
 ratio_uncomp = [j/i for i,j in zip(expected_memory_uncomp,measured_memory_uncomp)] 
 ratio_cp = [j/i for i,j in zip(expected_memory_cp,measured_memory_cp)]
+
+print(ratio_uncomp)
+print(ratio_cp)
+
 
 plt.figure()
 plt.scatter([-0.05], ratio_uncomp)

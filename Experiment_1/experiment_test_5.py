@@ -12,19 +12,25 @@ out_channels = 9
 kernel_size = (3,3)
 epochs      = 1
 image_size = 10
-padding = (0,0)
-c = [1,2,3,4,8]
+padding = (1,1)
+c = [1]
 
 experiment_results = {"Measured value" : "Rank", "Measured range" : c}
 
 logger = logging.getLogger(__name__)
 
 
+
+
 if __name__ == "__main__": 
+    #Get name of this file
+    filename = os.path.splitext(os.path.basename(__file__))[0]
+
+
     #Acquire name for logger and data
     start_date, start_time = helper.get_date_time(True)
     data_folder = f"{os.getcwd()}\\data"
-    experiment_name = "test_experiment_4"
+    experiment_name = filename
     event_name = f"{start_date}_{start_time}"
     logging.basicConfig(filename=f"{data_folder}\\log\\{experiment_name}\\{event_name}.txt",level=logging.INFO)
 

@@ -274,7 +274,6 @@ def cp_conv(x, cp_tensor, bias=None, stride=1, padding=0, dilation=1):
         # From (kernel_size, rank) to (rank, 1, kernel_size)
         kernel = tl.transpose(cp_tensor.factors[i+2]).unsqueeze(1)             
         x = general_conv1d(x.contiguous(), kernel, i+2, stride=stride[i], padding=padding[i], dilation=dilation[i], groups=rank)
-
     # Revert back number of channels from rank to output_channels
     x_shape = list(x.shape)
     x = x.reshape((batch_size, x_shape[1], -1))                

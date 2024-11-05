@@ -351,7 +351,7 @@ def get_theoretical_dataset_for_plot(in_channels: list, out_channels: list, kern
     
     return data
     
-def get_mulitple_of_SIMD(value, SIMD_size):
+def get_mulitple_of_SIMD(value, SIMD_size:int  = 8):
     if (value % SIMD_size) == 0:
         return value
     else:
@@ -364,19 +364,19 @@ def get_mkldnn_ram(in_channel, out_channel, kernel_size, image, method, stride, 
     #Calculate the output image as it will always have the same shape
     image_out = calc_output_image_dim(kernel_size,stride, padding, dilation, image)
     
-    if "method" == "uncomp":
+    if (method == "uncomp"):
         input_image = in_channel * math.prod(image)
-        kernel_size = in_channel *  out_channel * math.prod(kernel_size)
+        kernel = in_channel *  out_channel * math.prod(kernel_size)
         output_image = out_channel * math.prod(image_out)
 
 
         Filter_1 = []
 
-        Input_image = math.sum([input_image,input_image])
-        Model_size = math.sum([kernel_size])
-        Filter_1.append(get_mulitple_of_SIMD(in_channel)*math.prod(image))
-        Filter_1.append(get_mulitple_of_SIMD(out_channel)*get_mulitple_of_SIMD(in_channel))
-        Filter_1.append(get_mulitple_of_SIMD(out_channel)*math.prod(output_image))
+        Input_image = sum([input_image,input_image])
+        Model_size = sum([kernel])
+        Filter_1.append(get_mulitple_of_SIMD(in_channel)*math.prod(image)) #copy of the image
+        Filter_1.append(get_mulitple_of_SIMD(out_channel)*get_mulitple_of_SIMD(in_channel)*math.prod(kernel_size))
+        Filter_1.append(get_mulitple_of_SIMD(out_channel)*math.prod(image_out))
 
         output = [Input_image, Model_size, sum(Filter_1)]     
 
@@ -384,12 +384,11 @@ def get_mkldnn_ram(in_channel, out_channel, kernel_size, image, method, stride, 
             return sum(output)*bytes_per_float
         else:
             output = [i * bytes_per_float for i in output]
+            print(Filter_1)
             return output
 
-    if "method" == "cp":
+    if (method == "cp"):
         input_image = in_channel * math.prod(image)
-        kernel_size = in_channel *  out_channel * math.prod(kernel_size)
-        output_image = out_channel * math.prod(image_out)
 
 
         Filter_1 = []
@@ -399,20 +398,24 @@ def get_mkldnn_ram(in_channel, out_channel, kernel_size, image, method, stride, 
         Filter_3 = []
         Between_filter_3_and_4 = []
         Filter_4 = []
+        end = []
 
-        Input_image = math.sum([input_image,input_image])
-        Model_size = math.sum([kernel_size])
+        Input_image = sum([input_image,input_image])
+        Model_size = sum([rank*in_channel, rank*kernel_size[0], rank*kernel_size[1],rank*out_channel])
 
+        Filter_1.append(rank*in_channel) #Copy Kernel
         Filter_1.append(get_mulitple_of_SIMD(in_channel) *  math.prod(image)) #Copy input image
-        Filter_1.append(get_mulitple_of_SIMD(rank)*get_mulitple_of_SIMD(in_channel)*math.prod(image)) #Copy Kernel
+        Filter_1.append(get_mulitple_of_SIMD(rank)*get_mulitple_of_SIMD(in_channel)) #Reshape Kernel
         Filter_1.append(get_mulitple_of_SIMD(rank)*math.prod(image)) #Convolution
 
         Between_filter_1_and_2.append(rank*math.prod(image)) #reshape
 
-        Filter_2.append(rank *kernel_size[0]) #Copy kernel
+        Filter_2.append(rank * kernel_size[0]) #Copy kernel
         Filter_2.append(get_mulitple_of_SIMD(rank)*math.prod(image)) #Reshape image
         Filter_2.append(get_mulitple_of_SIMD(rank)*kernel_size[0]) #Reshape filter 2 kernel
         Filter_2.append(get_mulitple_of_SIMD(rank) * image_out[0] * image[1])
+
+        Between_filter_2_and_3.append(0)
 
         Filter_3.append(rank*kernel_size[1]) #Copy kernel
         Filter_3.append(get_mulitple_of_SIMD(rank)*kernel_size[1]) #Reshape kernel
@@ -422,15 +425,17 @@ def get_mkldnn_ram(in_channel, out_channel, kernel_size, image, method, stride, 
 
         Filter_4.append(get_mulitple_of_SIMD(rank)*math.prod(image_out)) #Reshape image
         Filter_4.append(get_mulitple_of_SIMD(out_channel)*get_mulitple_of_SIMD(rank)) #Reshape kernel
-        Filter_4.append(get_mulitple_of_SIMD(out_channel)*math.prod(output_image))
+        Filter_4.append(get_mulitple_of_SIMD(out_channel)*math.prod(image_out))
 
-        output = [Input_image,Model_size, Filter_1, Between_filter_1_and_2, Filter_2, Between_filter_2_and_3, Filter_3, Between_filter_3_and_4, Filter_4]
+        end.append(out_channel*math.prod(image_out))
 
-        output = [sum(i)*bytes_per_float for i in output if i != None]
+        output = [Input_image,Model_size, Filter_1, Between_filter_1_and_2, Filter_2, Between_filter_2_and_3, Filter_3, Between_filter_3_and_4, Filter_4,end]
+
+        output = [sum(i)  if (isinstance(i,list)) else i for i in output]
 
         if output_total == True:
-            return sum(output)
+            return sum(output)*bytes_per_float
         else:
-            return output
+            return [i*bytes_per_float for i in output]
 
     raise ValueError("Method must be uncomp or CP")
