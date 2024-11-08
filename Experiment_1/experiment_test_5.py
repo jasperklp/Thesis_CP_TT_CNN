@@ -1,4 +1,4 @@
-import experiment_runner_mkldnn as runner
+import experiment_runner_mkldnn_vtune as runner
 import experiment_helper_functions as helper
 import CNN_models
 import torch
@@ -7,13 +7,13 @@ import datetime
 import os
 import logging
 
-in_channels = 6
-out_channels = 9
-kernel_size = (3,3)
+in_channels = 1024
+out_channels = 1024
+kernel_size = (5,5)
 epochs      = 1
-image_size = 10
+image_size = 100
 padding = (1,1)
-c = [1]
+c = [100]
 
 experiment_results = {"Measured value" : "Rank", "Measured range" : c}
 
@@ -47,10 +47,12 @@ if __name__ == "__main__":
     logger.info(f"Started at {start_date} {start_time}")
     
     
-    measurement_outputs.append(runner.model_runner(CNN_models.uncomp_model(in_channels=in_channels,out_channels=out_channels,kernel_size=kernel_size,padding=padding),epochs,image_size,verbose = True))
+    # measurement_outputs.append(runner.model_runner(CNN_models.uncomp_model(in_channels=in_channels,out_channels=out_channels,kernel_size=kernel_size,padding=padding),epochs,image_size,verbose = False,measure = False))
+    # measurement_outputs.append(runner.model_runner(CNN_models.uncomp_model(in_channels=in_channels,out_channels=out_channels,kernel_size=kernel_size,padding=padding),epochs,image_size,verbose = False,measure = True))
 
     for i in c:
-        measurement_outputs.append(runner.model_runner(CNN_models.cp_tensorly_model(in_channels=in_channels,out_channels=out_channels,kernel_size=kernel_size,padding=padding,rank=i),epochs,image_size, verbose = True))
+        measurement_outputs.append(runner.model_runner(CNN_models.cp_tensorly_model(in_channels=in_channels,out_channels=out_channels,kernel_size=kernel_size,padding=padding,rank=i),epochs,image_size, verbose = True,measure = False))
+        measurement_outputs.append(runner.model_runner(CNN_models.cp_tensorly_model(in_channels=in_channels,out_channels=out_channels,kernel_size=kernel_size,padding=padding,rank=i),epochs,image_size, verbose = True,measure = True))
  
 
     #End of experiment

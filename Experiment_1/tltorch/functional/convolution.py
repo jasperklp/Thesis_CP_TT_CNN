@@ -131,12 +131,12 @@ def general_conv1d(x, kernel, mode, bias=None, stride=1, padding=0, groups=1, di
         if i != mode:
             kernel = kernel.unsqueeze(i)
 
-    with record_function(f'Filter_image {mode}'): 
-        return _CONVOLUTION[order](x, kernel, bias=bias, 
-                               stride=_pad_value(stride, mode, order),
-                               padding=_pad_value(padding, mode, order, padding=0), 
-                               dilation=_pad_value(dilation, mode, order), 
-                               groups=groups)
+     
+    return _CONVOLUTION[order](x, kernel, bias=bias, 
+                            stride=_pad_value(stride, mode, order),
+                            padding=_pad_value(padding, mode, order, padding=0), 
+                            dilation=_pad_value(dilation, mode, order), 
+                            groups=groups)
 
 
 def tucker_conv(x, tucker_tensor, bias=None, stride=1, padding=0, dilation=1):
@@ -262,8 +262,9 @@ def cp_conv(x, cp_tensor, bias=None, stride=1, padding=0, dilation=1):
     # First conv == tensor contraction
     # from (in_channels, rank) to (rank == out_channels, in_channels, 1)
     with record_function("Filter_image 1"):
-        print("Image 1")
-        x = F.conv1d(x, tl.transpose(cp_tensor.factors[1]).unsqueeze(2))
+        with torch.profiler.itt.range("Filter_image 1"):
+            print("Image 1")
+            x = F.conv1d(x, tl.transpose(cp_tensor.factors[1]).unsqueeze(2))
 
     x_shape[1] = rank
     x = x.reshape(x_shape)
@@ -271,9 +272,11 @@ def cp_conv(x, cp_tensor, bias=None, stride=1, padding=0, dilation=1):
     # convolve over non-channels
     for i in range(order):
         print(f"Image {i+2}")
+        with record_function(f'Filter_image {i+2}'):
+            with torch.profiler.itt.range(f"Filter_image {i+2}"):
         # From (kernel_size, rank) to (rank, 1, kernel_size)
-        kernel = tl.transpose(cp_tensor.factors[i+2]).unsqueeze(1)             
-        x = general_conv1d(x.contiguous(), kernel, i+2, stride=stride[i], padding=padding[i], dilation=dilation[i], groups=rank)
+                kernel = tl.transpose(cp_tensor.factors[i+2]).unsqueeze(1)             
+                x = general_conv1d(x.contiguous(), kernel, i+2, stride=stride[i], padding=padding[i], dilation=dilation[i], groups=rank)
     # Revert back number of channels from rank to output_channels
     x_shape = list(x.shape)
     x = x.reshape((batch_size, x_shape[1], -1))                
@@ -281,9 +284,10 @@ def cp_conv(x, cp_tensor, bias=None, stride=1, padding=0, dilation=1):
     # From (out_channels, rank) to (out_channels, in_channels == rank, 1)
     #x = x*cp_tensor.weights.unsqueeze(1).unsqueeze(0).to_mkldnn()
     with record_function("Filter_image 4"):
-        print("Image 4")
-        x_old = x
-        x = F.conv1d(x, cp_tensor.factors[0].unsqueeze(2), bias=bias)
+        with torch.profiler.itt.range(f"Filter_image 4"):
+            print("Image 4")
+            x_old = x
+            x = F.conv1d(x, cp_tensor.factors[0].unsqueeze(2), bias=bias)
     x_old
     x_shape[1] = x.shape[1] # = out_channels
     x = x.reshape(x_shape)
