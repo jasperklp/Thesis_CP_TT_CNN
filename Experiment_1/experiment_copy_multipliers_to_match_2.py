@@ -1,4 +1,4 @@
-import experiment_runner as runner
+import Experiment_test.experiment_runner as runner
 import experiment_helper_functions as helper
 import CNN_models
 import torch
