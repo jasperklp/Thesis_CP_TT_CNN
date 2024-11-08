@@ -95,6 +95,7 @@ class CPTensor(FactorizedTensor, name='CP'):
     @classmethod
     def new(cls, shape, rank, device=None, dtype=None, **kwargs):
         rank = tl.cp_tensor.validate_cp_rank(shape, rank)
+        rank = 1 if rank == 0 else rank #Guard for rank zero
 
         # Register the parameters
         weights = nn.Parameter(torch.empty(rank, device=device, dtype=dtype))
@@ -107,6 +108,7 @@ class CPTensor(FactorizedTensor, name='CP'):
     def from_tensor(cls, tensor, rank='same', **kwargs):
         shape = tensor.shape
         rank = tl.cp_tensor.validate_cp_rank(shape, rank)
+        rank = 1 if rank == 0 else rank #Guard for rank zero
         dtype = tensor.dtype
 
         with torch.no_grad():

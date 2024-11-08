@@ -1,4 +1,4 @@
-import Experiment_test.experiment_runner as runner
+import experiment_runner_mkldnn as runner
 import experiment_helper_functions as helper
 import CNN_models
 import torch
@@ -8,14 +8,14 @@ import os
 import logging
 import copy
 
-
+torch.backends.mkldnn.VERBOSE_ON
 
 #Here are dictionaries with the test values
 #Test values are changed such that one could more easliy recoginze the kernels of the four filters
 #Image size will be kept the same by chosing the right padding.
 
 
-base_dict = {"in_channels" : 10, "out_channels" : 10, "kernel_size" : (3,3), "padding" : (1,1), "image_size" : 100, "rank" : 2, "epochs" : 1}
+base_dict = {"in_channels" : 10, "out_channels" : 10, "kernel_size" : (3,5), "padding" : (1,1), "image_size" : 100, "rank" : 2, "epochs" : 1}
 change_in_channel_dict = copy.deepcopy(base_dict)
 change_in_channel_dict["in_channels"] = 100
 
@@ -23,17 +23,17 @@ change_out_channel_dict = copy.deepcopy(base_dict)
 change_out_channel_dict["out_channels"] = 100
 
 change_kernel_padding_dict_1 = copy.deepcopy(base_dict)
-change_kernel_padding_dict_1["kernel_size"] = (3,51)
-change_kernel_padding_dict_1["padding"] = (1, 25)
+change_kernel_padding_dict_1["kernel_size"] = (3,5)
+change_kernel_padding_dict_1["padding"] = (1, 2)
 
 change_kernel_padding_dict_2 = copy.deepcopy(base_dict)
-change_kernel_padding_dict_2["kernel_size"] = (51,3)
-change_kernel_padding_dict_2["padding"] = (25,1)
+change_kernel_padding_dict_2["kernel_size"] = (5,3)
+change_kernel_padding_dict_2["padding"] = (2,1)
 
 
 
 experiment_results = {}
-experiment_results["Measurements"] = [base_dict]#, change_in_channel_dict, change_out_channel_dict, change_kernel_padding_dict_1,change_kernel_padding_dict_2]
+experiment_results["Measurements"] = [base_dict] #, change_in_channel_dict, change_out_channel_dict, change_kernel_padding_dict_1,change_kernel_padding_dict_2]
 
 logger = logging.getLogger(__name__)
 
@@ -68,8 +68,9 @@ if __name__ == "__main__":
         rank            = i["rank"]
         epochs          = i["epochs"]
 
-        
+        print("Uncomp")
         measurement_outputs.append(runner.model_runner(CNN_models.uncomp_model(in_channels=in_channels,out_channels=out_channels,kernel_size=kernel_size,padding=padding),epochs,image_size,verbose = False))
+        print("CP")
         measurement_outputs.append(runner.model_runner(CNN_models.cp_tensorly_model(in_channels=in_channels,out_channels=out_channels,kernel_size=kernel_size,padding=padding,rank=rank),epochs,image_size, verbose = False))
 
     

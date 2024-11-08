@@ -4,8 +4,62 @@ import warnings
 import copy
 import datetime
 import logging
+from dataclasses import dataclass
 
 logger = logging.getLogger(__name__)
+
+@dataclass
+class measurement:
+    #Data for CNN
+    in_channel  : int | list
+    out_channel : int |list
+    kernel_size : int|tuple | list
+    image_size  : int|tuple | list
+    rank        : int|tuple | list
+    padding     : int|tuple | list      = 1
+    stride      : int|tuple | list      = 1
+    dilation    : int|tuple | list      = 1 
+    
+    #Input image data
+    image_size  : int|tuple | list
+    
+    #Nr of epochs
+    epochs      : int                   = 1
+
+    def __post_init__(self):
+        to_list = lambda x : [x] if not isinstance(x,list) else x
+        self.in_channel     = to_list(self.in_channel)
+        self.out_channel    = to_list(self.out_channel)
+        self.kernel_size    = to_list(self.kernel_size)
+        self.image_size     = to_list(self.image_size)
+        self.rank           = to_list(self.rank)
+        self.padding        = to_list(self.padding)
+        self.stride         = to_list(self.stride)
+        self.dilation       = to_list(self.dilation)
+
+        #Check if padding and the kernel size have approximately the same shape as they go together
+        len_kernel_size = 1 if (isinstance(self.kernel_size, tuple) | isinstance(self.padding, int)) else len(self.kernel_size)
+        len_padding = 1 if (isinstance(self.padding, tuple) | isinstance(self.padding, int)) else len(self.padding)
+
+        if len_kernel_size != len_padding:
+            raise ValueError(f"The length of the kernel_sizes and padding should be equal, but the padding list has length {len_padding} and kernel_size_list has length {len_kernel_size}")
+
+    def __iter__(self):
+        return self
+    
+    def __next__(self):
+        for in_channel in self.in_channel:
+            for out_channel in self.out_channel:
+                for kernel_size in self.kernel_size:
+                    for stride in self.stride:
+                        for padding in self.padding:
+                            for dilation in self.dilation:
+                                for image_size in self.image_size:
+                                    print(in_channel, out_channel, kernel_size, stride, padding, dilation, image_size,self.rank,self.epochs)
+                                    return (in_channel, out_channel, kernel_size, stride, padding, dilation, image_size,self.rank,self.epochs)
+
+    def as_dict(self):
+        return dataclass.asdict(self).items()
 
 def name_number(number : int, add_number = True, add_name_size_string = True):
     """

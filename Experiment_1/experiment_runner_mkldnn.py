@@ -76,38 +76,38 @@ def model_runner(model, epochs : int, image_size : int|tuple, device : str = 'cp
 
     measurements = []
     with torch.no_grad():
-        with torch.backends.mkldnn.verbose(torch.backends.mkldnn.VERBOSE_ON):
-            for i in range(epochs):
-                with profile(activities=[ProfilerActivity.CPU], 
-                    profile_memory=True,
-                    record_shapes=False, 
-                    with_stack=False,
-                    with_modules=False
-                    ) as prof:
-                    chosen_seed = 100 + i 
-                    torch.manual_seed(chosen_seed)
-                    random.seed(chosen_seed)
-                    np.random.seed(chosen_seed)
-                    
-                    with record_function("Input_image"):
-                        input = torch.randn(1,in_channels, image_size[0], image_size[1],dtype=torch.float32).to_mkldnn()
-                    with record_function("model_size"):
-                        model_test = copy.deepcopy(model)
-                    
-                    start = time.time()
-                    output = model_test(input)
-                    end =   time.time()
-
-                    wall_time = end - start
-
-                    total_time += wall_time
-                    del input
-                    del model_test
-                    del output
-
-                if verbose == True:
-                    print(prof.key_averages().table(sort_by="cpu_memory_usage"))
+        #with torch.backends.mkldnn.verbose(torch.backends.mkldnn.VERBOSE_ON):
+        for i in range(epochs):
+            with profile(activities=[ProfilerActivity.CPU], 
+                profile_memory=True,
+                record_shapes=False, 
+                with_stack=False,
+                with_modules=False
+                ) as prof:
+                chosen_seed = 100 + i 
+                torch.manual_seed(chosen_seed)
+                random.seed(chosen_seed)
+                np.random.seed(chosen_seed)
                 
+                with record_function("Input_image"):
+                    input = torch.randn(1,in_channels, image_size[0], image_size[1],dtype=torch.float32).to_mkldnn()
+                with record_function("model_size"):
+                    model_test = copy.deepcopy(model)
+                
+                start = time.time()
+                output = model_test(input)
+                end =   time.time()
+
+                wall_time = end - start
+
+                total_time += wall_time
+                del input
+                del model_test
+                del output
+
+            if verbose == True:
+                print(prof.key_averages().table(sort_by="cpu_memory_usage"))
+            
     
     
         tracefile = f"{os.getcwd()}\\data\\data_raw\\{start_date}_{start_time}_{model.name}.json"

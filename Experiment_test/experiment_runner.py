@@ -1,11 +1,12 @@
 import sys
+import os
 #Adds root of thesis folder to sys path.
 sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 
 import torch
 import numpy as np
-import Experiment_1.calc_expectation as calc_expectation
-import Experiment_1.CNN_models as CNN_models
+from ..Experiment_1 import calc_expectation as calc_expectation
+from ..Experiment_1 import CNN_models  as CNN_models
 import time
 import datetime
 import tqdm
@@ -15,7 +16,7 @@ from torch.profiler import profile, record_function, ProfilerActivity
 import os
 import json
 from pathlib import Path
-import Experiment_1.experiment_helper_functions as helper
+from  ..Experiment_1 import experiment_helper_functions as helper
 import logging
 
 logger = logging.getLogger(__name__)

@@ -41,13 +41,13 @@ def verify_if_measurements_are_detministic(outcomes_data, verbose: bool = False)
         #Checks if all ordered bytes and names are the same 
         # if so it prints nothing else it prints That not all names or bytes are equal.
         for i in range(len(byte_data[0])):
-            if not (all(point[i] == byte_data[i][i] for point in byte_data)):
+            if not (all(point[i] == byte_data[0][i] for point in byte_data)):
                 if verbose == True:
                     print("Not all byte values are equal.")
                     return_value = False
                 else:
                     return False
-            if not (all(point[i] == byte_data[i][i] for point in byte_data)):
+            if not (all(point[i] == byte_data[0][i] for point in byte_data)):
                 if verbose == True:
                     print("Not all names are equal")
                     return_value = False
@@ -58,9 +58,10 @@ def verify_if_measurements_are_detministic(outcomes_data, verbose: bool = False)
         mean_peak_RAM = sum(peak_RAM_data)/len(peak_RAM_data)
         mean_total_alloc = sum(total_alloc_mem_data)/len(total_alloc_mem_data)
 
-        #Calculates the standard deviation of peak RAM and total alloc memory
-        std_peak_RAM = statistics.stdev(peak_RAM_data)
-        std_total_alloc = statistics.stdev(total_alloc_mem_data)
+        #Calculates the standard deviation of peak RAM and total alloc memory if there is more then one measurement
+        if len(byte_data) !=1:
+            std_peak_RAM = statistics.stdev(peak_RAM_data)
+            std_total_alloc = statistics.stdev(total_alloc_mem_data)
 
         
         if verbose == True:
@@ -70,18 +71,19 @@ def verify_if_measurements_are_detministic(outcomes_data, verbose: bool = False)
             print(f"For total allocated RAM the avarage is {mean_total_alloc} with standard deviation {std_total_alloc}")
             print("") #Get empty line
 
-        if std_peak_RAM != 0.0:
-            if verbose == True:
-                print("Peak ram standard deviation is not zero")
-                return_value = False
-            else:
-                return False
-        if std_total_alloc != 0.0:
-            if verbose == True:
-                print("Total alloc standard deviation is not zero")
-                return_value = False
-            else:
-                return False
+        if (len(byte_data) > 1):
+            if (std_peak_RAM != 0.0):
+                if verbose == True:
+                    print("Peak ram standard deviation is not zero")
+                    return_value = False
+                else:
+                    return False
+            if (std_total_alloc != 0.0):
+                if verbose == True:
+                    print("Total alloc standard deviation is not zero")
+                    return_value = False
+                else:
+                    return False
     
     #Return if no measurment encouters problems or verbose = True
     return return_value
