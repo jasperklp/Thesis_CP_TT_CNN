@@ -8,18 +8,9 @@ from tqdm import tqdm
 
 logger = logging.getLogger(__name__)
 
-def main():
-    measure_data = helper.measurement(in_channel  = [2,4,8,16,64,128,256,1024],                                      
-                                    out_channel = [128],
-                                    kernel_size = [3],
-                                    padding     = 1,
-                                    rank        = [0.01,0.05,0.1,0.25,0.5,0.75,1],
-                                    image_size  = 128,
-                                    epochs      = 1
-                                    )
 
-    filename = os.path.splitext(os.path.basename(__file__))[0]
 
+def main(measure_data, filename):
     #Acquire name for logger and data
     start_date, start_time = helper.get_date_time(True)
     data_folder = f"{os.getcwd()}\\data"
@@ -40,7 +31,7 @@ def main():
     #Start expermint here.
     logger.info(f"Started at {start_date} {start_time}")
 
-    for (in_channels, out_channels, kernel_size, stride, padding, dilation, image_size, rank, epochs) in tqdm(measure_data):
+    for in_channels, out_channels, kernel_size, stride, padding, dilation, image_size, rank, epochs in tqdm(measure_data, total=measure_data.amount_of_measurements):
         measurement_outputs.append(runner.model_runner(CNN_models.uncomp_model(in_channels=in_channels,out_channels=out_channels,kernel_size=kernel_size,padding=padding,stride=stride),epochs,image_size,verbose = False)) 
         for i in rank:
             measurement_outputs.append(runner.model_runner(CNN_models.cp_tensorly_model(in_channels=in_channels,out_channels=out_channels,kernel_size=kernel_size,padding=padding,rank=i,stride=stride),epochs,image_size, verbose = False))
@@ -56,8 +47,3 @@ def main():
     outfile =  open(f"{data_folder}\\data\\{experiment_name}\\{event_name}.json", "w")
     json.dump(experiment_results,outfile, indent=6)
     outfile.close()
-
-
-
-if __name__ == "__main__":
-    main()

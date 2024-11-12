@@ -384,7 +384,7 @@ def get_mkldnn_ram(in_channel, out_channel, kernel_size, image, method, stride, 
             return sum(output)*bytes_per_float
         else:
             output = [i * bytes_per_float for i in output]
-            print(Filter_1)
+            #print(Filter_1)
             return output
 
     if (method == "cp"):

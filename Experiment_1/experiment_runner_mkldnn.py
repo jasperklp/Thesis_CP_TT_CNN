@@ -110,9 +110,9 @@ def model_runner(model, epochs : int, image_size : int|tuple, device : str = 'cp
             
     
     
-        tracefile = f"{os.getcwd()}\\data\\data_raw\\{start_date}_{start_time}_{model.name}.json"
-        prof.export_chrome_trace(tracefile)
-        measurements.append(tracefile)
+            tracefile = f"{os.getcwd()}\\data\\data_raw\\{start_date}_{start_time}_{model.name}.json"
+            prof.export_chrome_trace(tracefile)
+            measurements.append(tracefile)
 
     [end_date,end_time] = f"{datetime.datetime.now()}".split()
     end_time = end_time.replace(":",".")

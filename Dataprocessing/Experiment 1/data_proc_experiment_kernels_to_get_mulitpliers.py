@@ -17,7 +17,7 @@ from Dataprocessing import dataproc_utils as utils
 from Dataprocessing import openpyxl_proc_utils as xl_utils
 
 read_file = "2024-11-08_12.15.27"
-save_file = f"{os.path.dirname(os.path.abspath(__file__))}\\files\\{read_file}.xlsx"
+save_file = f"{os.path.dirname(os.path.abspath(__file__))}\\files\\multiplier\\{read_file}.xlsx"
 
 
 with open(f"{os.getcwd()}\\data\\data\\experiment_alter_kernels_to_get_mulitpliers\\{read_file}.json") as json_file:
