@@ -63,6 +63,9 @@ class uncomp_model(torch.nn.Module):
     def MKL_RAM(self,image,  output_total = False):
         return calc_expectation.get_mkldnn_ram(self._in_channels, self._out_channels, self._kernel_size, image, 'uncomp', self._stride, self._padding, self._dilation, output_total=output_total,bytes_per_float=torch.finfo(self._dtype).bits/8)
 
+    def DefaultPT_RAM(self, image, output_total = False):
+        return calc_expectation.get_RAM_realistic(self._in_channels, self._out_channels, self._kernel_size, image, "uncomp", self._stride, self._padding, self._dilation, None, output_total=output_total)
+
     def forward(self,x):
         with record_function("Filter_image 1"):
             return self.encoder(x)
@@ -138,6 +141,11 @@ class cp_tensorly_model(torch.nn.Module):
         else:
             NotImplementedError(r'For this implementation of the FactorizedConv, no MAC and RAM are worked out')
     
+    def DefaultPT_RAM(self, image, output_total = False):
+        if self._implementation == 'factorized':
+            return calc_expectation.get_RAM_realistic(self._in_channels, self._out_channels, self._kernel_size, image, 'cp', self._stride, self._padding, self._dilation,rank=self._rank_int, output_total=output_total,bytes_per_float=torch.finfo(self._dtype).bits/8)
+        else: 
+            NotImplementedError('For this implementation of the FactorizedConv, no MAC and RAM are worked out')
     
     def forward(self, x):
         return self.encoder(x)

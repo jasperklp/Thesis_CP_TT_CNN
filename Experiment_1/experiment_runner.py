@@ -5,8 +5,8 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(
 
 import torch
 import numpy as np
-from ..Experiment_1 import calc_expectation as calc_expectation
-from ..Experiment_1 import CNN_models  as CNN_models
+import calc_expectation as calc_expectation
+import CNN_models  as CNN_models
 import time
 import datetime
 import tqdm
@@ -16,7 +16,7 @@ from torch.profiler import profile, record_function, ProfilerActivity
 import os
 import json
 from pathlib import Path
-from  ..Experiment_1 import experiment_helper_functions as helper
+import experiment_helper_functions as helper
 import logging
 
 logger = logging.getLogger(__name__)

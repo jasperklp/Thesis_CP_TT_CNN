@@ -37,8 +37,6 @@ class measurement:
         self.stride         = to_list(self.stride)
         self.dilation       = to_list(self.dilation)
 
-        to_be_measured = [self.in_channel, self.out_channel, self.kernel_size, self.padding, self.stride, self.dilation]
-        self.amount_of_measurements = math.prod([len(i) for i in to_be_measured])
 
         #Check if padding and the kernel size have approximately the same shape as they go together
         len_kernel_size = 1 if (isinstance(self.kernel_size, tuple) | isinstance(self.padding, int)) else len(self.kernel_size)
@@ -46,6 +44,30 @@ class measurement:
 
         if len_kernel_size != len_padding:
             raise ValueError(f"The length of the kernel_sizes and padding should be equal, but the padding list has length {len_padding} and kernel_size_list has length {len_kernel_size}")
+
+    def amount_of_measurements(self, func):
+        """
+            Deterimens the amount of measurements that are done based on the iterator given in func
+
+        Args:
+            func:   An iterator of the class
+        Returns:
+            The amount of measurements that will be done. Based on the iterator (routine)
+        Raises:
+            ValueError  : If the iterator does not exist.
+        """
+        func_name = func.__name__
+
+        if func_name == "__iter__":
+            to_be_measured = [self.in_channel, self.out_channel, self.kernel_size, self.padding, self.stride, self.dilation, self.image_size]
+        elif func_name == "iter_same_in_out":
+            to_be_measured =  [self.in_channel, self.kernel_size, self.padding, self.stride, self.dilation, self.image_size]
+        elif func_name == "iter_same_in_out_same_kernel_pad":
+            to_be_measured =  [self.in_channel, self.kernel_size, self.stride, self.dilation, self.image_size]
+        else: 
+            raise ValueError(f"Expected an iterator of the measurement dataclass, instead got {func}")
+        
+        return math.prod([len(i) for i in to_be_measured])
 
     def __iter__(self):
         for in_channel in self.in_channel:
@@ -57,6 +79,36 @@ class measurement:
                                 for image_size in self.image_size:
                                     #print(in_channel, out_channel, kernel_size, stride, padding, dilation, image_size,self.rank,self.epochs)
                                     yield (in_channel, out_channel, kernel_size, stride, padding, dilation, image_size,self.rank,self.epochs)
+
+    def iter_same_in_out(self):
+        if (len(self.in_channel) != len(self.out_channel)):
+            raise ValueError(f"List of in_channels and out_channels should be of the same length.\n Instead {self.in_channel} in_channels are present and {self.out_channel} out channels")
+        
+        for in_channel,out_channel in zip(self.in_channel,self.out_channel):
+            for kernel_size in self.kernel_size:
+                    for stride in self.stride:
+                        for padding in self.padding:
+                            for dilation in self.dilation:
+                                for image_size in self.image_size:
+                                    #print(in_channel, out_channel, kernel_size, stride, padding, dilation, image_size,self.rank,self.epochs)
+                                    yield (in_channel, out_channel, kernel_size, stride, padding, dilation, image_size,self.rank,self.epochs)
+
+    def iter_same_in_out_same_kernel_pad(self):
+        if (len(self.in_channel) != len(self.out_channel)):
+            raise ValueError(f"List of in_channels and out_channels should be of the same length.\n Instead {self.in_channel} in_channels are present and {self.out_channel} out channels")
+        
+        if (len(self.in_channel) != len(self.out_channel)):
+            raise ValueError(f"List of kernelsizes and paddings should be of the same length.\n Instead {self.kernel_size} kernel_sizes are present and {self.padding} different paddings")
+        
+        
+        for in_channel,out_channel in zip(self.in_channel,self.out_channel):
+            for kernel_size,padding in  zip(self.kernel_size,self.padding):
+                for stride in self.stride:
+                    for dilation in self.dilation:
+                        for image_size in self.image_size:
+                            # print(in_channel, out_channel, kernel_size, stride, padding, dilation, image_size,self.rank,self.epochs)
+                            yield (in_channel, out_channel, kernel_size, stride, padding, dilation, image_size,self.rank,self.epochs)
+
 
     def as_dict(self):
         return asdict(self)
@@ -74,6 +126,10 @@ class measurement:
         epochs         = dictionary.get("epochs")
 
         return cls(in_channel,out_channel,kernel_size,image_size,rank,padding,stride,dilation,epochs)
+    
+
+
+
 
 def name_number(number : int, add_number = True, add_name_size_string = True):
     """

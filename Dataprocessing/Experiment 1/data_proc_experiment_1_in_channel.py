@@ -10,13 +10,21 @@ import matplotlib.pyplot as plt
 
 
 def main():
-    read_file  = "2024-11-08_16.47.59"
-    folder = "verify_model_matching_in_channel"
+    use_df_pytorch = True
+    if use_df_pytorch == True:
+        read_file = "2024-11-22_12.38.58"
+        folder = "verify_model_matching_in_channel_default_pytorch"
+    else:
+        read_file  = "2024-11-12_10.48.03"
+        folder = "verify_model_matching_in_channel"
 
-    results, measurement_parameters, model_types = utils.preprocess_measurement_data_single(read_file,folder, "in_channels")
+    
+
+    results, measurement_parameters, model_types = utils.preprocess_measurement_data(read_file,folder, "in_channel")
 
     plot_in_channel_data(results, measurement_parameters, model_types)
     plot_in_channel_ratio_expected(results, measurement_parameters, model_types)
+    plot_in_channel_ratio_uncomp(results,measurement_parameters,model_types)
 
 
 #Create figure
@@ -27,7 +35,7 @@ def plot_in_channel_data(results, measurement_parameters, model_types):
 
     plt.title("Memory for different in_channels")
     plt.ylabel("RAM MB")
-    plt.xlabel("In_channels")
+    plt.xlabel("# of in_channels")
     plt.xscale("log")
     plt.legend(model_types)
     plt.show()
@@ -50,11 +58,13 @@ def plot_in_channel_ratio_uncomp(results, measurement_parameters, model_types):
     ax = plt.gca()
     for i,item in enumerate(model_types):
         plt.scatter(measurement_parameters.in_channel,results[0,i,:]/results[0,0,:])
-    plt.title("Memory for different in_channels")
+    plt.title("Memory for different in_channels, img=128x128, kern=3x3, out=128")
     plt.ylabel("Ratio")
     plt.xlabel("In_channels")
     plt.xscale("log")
-    ax.set_ylim([0, 8])
+    ax.set_ylim([0, 10])
+    ax.set_xticks(measurement_parameters.in_channel)
+    ax.set_xticklabels(measurement_parameters.in_channel)
     plt.legend(model_types)
     plt.show()
     

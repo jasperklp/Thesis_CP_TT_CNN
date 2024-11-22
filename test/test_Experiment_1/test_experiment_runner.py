@@ -1,4 +1,4 @@
-from ...Experiment_test import experiment_runner as runner
+from ...Experiment_1 import experiment_runner as runner
 from ...Experiment_1 import CNN_models
 
 #Do forall tests a simple short run s.t. it can be verified that all functionallity works in the end :)

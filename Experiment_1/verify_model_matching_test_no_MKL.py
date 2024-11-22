@@ -1,4 +1,4 @@
-import experiment_runner_mkldnn as runner
+import experiment_runner_no_MKL as runner
 import experiment_helper_functions as helper
 import CNN_models
 import os

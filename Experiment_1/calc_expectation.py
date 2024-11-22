@@ -1,6 +1,7 @@
 import math
 import functools
 import numpy as np
+import torch
 
 #Defaults
 #Gives the default number of bits for a memeory operation.
@@ -358,7 +359,7 @@ def get_mulitple_of_SIMD(value, SIMD_size:int  = 8):
         return (value//SIMD_size + 1)*SIMD_size
 
 
-def get_mkldnn_ram(in_channel, out_channel, kernel_size, image, method, stride, padding, dilation, rank = None, output_total:bool = True, bytes_per_float = 4,SIMD_size : int = 8):
+def get_mkldnn_ram(in_channel, out_channel, kernel_size, image, method, stride, padding, dilation, rank = None, output_total:bool = True, bytes_per_float = 4):
     #Check input parameters which could ether be an int or a tuple of ints.
     [kernel_size, stride, padding, dilation, image, rank] = validate_MAC_or_RAM_calc_input(kernel_size, stride, padding, dilation, image, method, rank, in_channel, out_channel)
     #Calculate the output image as it will always have the same shape
@@ -384,7 +385,6 @@ def get_mkldnn_ram(in_channel, out_channel, kernel_size, image, method, stride, 
             return sum(output)*bytes_per_float
         else:
             output = [i * bytes_per_float for i in output]
-            #print(Filter_1)
             return output
 
     if (method == "cp"):
@@ -431,6 +431,112 @@ def get_mkldnn_ram(in_channel, out_channel, kernel_size, image, method, stride, 
 
         output = [Input_image,Model_size, Filter_1, Between_filter_1_and_2, Filter_2, Between_filter_2_and_3, Filter_3, Between_filter_3_and_4, Filter_4,end]
 
+        output = [sum(i)  if (isinstance(i,list)) else i for i in output]
+
+        if output_total == True:
+            return sum(output)*bytes_per_float
+        else:
+            return [i*bytes_per_float for i in output]
+
+    raise ValueError("Method must be uncomp or CP")
+
+
+def RAM_no_mkl(out_channel, out_width, out_height):
+    return [out_channel*out_width*out_height]
+
+def RAM_MKL(in_channel, out_channel, kernel_size, in_width, in_height, out_width,out_height):
+    Filter = []
+    Filter.append(get_mulitple_of_SIMD(in_channel) * in_width * in_height)
+    Filter.append(get_mulitple_of_SIMD(out_channel) * get_mulitple_of_SIMD(in_channel) * kernel_size[0] * kernel_size[1])
+    Filter.append(get_mulitple_of_SIMD(out_channel) * out_width * out_height)
+    Filter.append(out_channel * out_width * out_height)
+
+    return Filter
+
+def RAM_MKL_1x1_conv(rank,kernel_size : int, in_height, in_width,out_height,out_width):
+    
+    
+    #In case rank is one, the number of groups is one and you get another situation.
+    if (    (rank ==  1) and 
+            kernel_size <= 3 and
+            1 and#It is assumed there is no batching:
+            (rank * in_height * in_width <= 20480)
+    ):
+        print("no_MKL")
+        return RAM_no_mkl(rank, out_height, out_width) * (kernel_size + 1)
+    else :
+        Filter = []
+        Filter.append(get_mulitple_of_SIMD(rank) * in_width * in_height)
+        Filter.append(get_mulitple_of_SIMD(rank) * kernel_size)
+        Filter.append(get_mulitple_of_SIMD(rank)* out_width * out_height)
+        Filter.append(rank* out_width * out_height)
+        print("MKL")
+    return Filter
+
+def RAM_choose_MKL_or_nativePT(in_channel, out_channel, kernel_size, stride, padding, dilation, in_width, in_height, out_width,out_height, extra_kernel_copy = False):
+    if (
+        1 and  
+        1 and
+        (   (all(i != 1 for i in stride)) or
+            (all(i != 1 for i in dilation)) or
+            (all(i != 0 for i in padding))  or
+            0 or
+            (kernel_size[0] != 1) or
+            (kernel_size[1] != 1) or
+            1 # Get num thread does not seem to be initialized. However, more than 1 core is assumed.(torch.get_num_thread() > 1)
+        ) and
+        (   0 or #Only call this function when groups = 1
+            (kernel_size[0] > 3 and kernel_size[1] > 3) or
+            0 or #Assumed batch size is 1
+            (1 * in_channel * in_width * in_height > 20480) #Assume batch size larger than 1
+        )
+    ):
+        print("MKL")
+        return RAM_MKL(in_channel,out_channel,kernel_size,in_width, in_height, out_width, out_height)
+    else:
+        print("no_MKL")
+        if math.prod(kernel_size) == 1:
+            if extra_kernel_copy == True:
+                return RAM_no_mkl(out_channel,out_width,out_height)[0] + in_channel * out_channel
+            else:
+                return RAM_no_mkl(out_channel,out_width,out_height)
+
+        else:
+            return RAM_no_mkl(out_channel,out_width,out_height) * (math.prod(kernel_size) + 1)
+
+
+
+
+def get_RAM_realistic(in_channel, out_channel, kernel_size, image, method, stride, padding, dilation, rank = None, output_total:bool = True, bytes_per_float = 4,SIMD_size : int = 8):
+    #Check input parameters which could ether be an int or a tuple of ints.
+    [kernel_size, stride, padding, dilation, image, rank] = validate_MAC_or_RAM_calc_input(kernel_size, stride, padding, dilation, image, method, rank, in_channel, out_channel)
+    #Calculate the output image as it will always have the same shape
+    image_out = calc_output_image_dim(kernel_size,stride, padding, dilation, image)
+
+    if(method == "uncomp"):
+        Input_image = in_channel * math.prod(image)
+        Model_size = in_channel *  out_channel * math.prod(kernel_size)
+
+        Filter_1 = RAM_choose_MKL_or_nativePT(in_channel,out_channel, kernel_size, stride, padding, dilation, image[0],image[1],image_out[0],image_out[1])
+        output = [Input_image, Model_size, sum(Filter_1)]     
+
+        if output_total == True:
+            return sum(output)*bytes_per_float
+        else:
+            output = [i * bytes_per_float for i in output]
+            return output
+        
+
+    if(method == "cp"):
+        Input_image = in_channel * math.prod(image)
+        Model_size = sum([rank*in_channel, rank*kernel_size[0], rank*kernel_size[1],rank*out_channel])
+
+        Filter_1 = RAM_choose_MKL_or_nativePT(in_channel, rank, (1,1), [1,1], [0,0], [1,1], image[0], image[1], image[0], image[1], True)
+        Filter_2 = RAM_MKL_1x1_conv(rank, kernel_size[0], image[0], image[1], image_out[0], image[1])
+        Filter_3 = RAM_MKL_1x1_conv(rank, kernel_size[1], image_out[0], image[1], image_out[0], image_out[1])
+        Filter_4 = RAM_choose_MKL_or_nativePT(rank, out_channel, (1,1), [1], [0], [1], image_out[0], image_out[1], image_out[0], image_out[1])
+
+        output = [Input_image, Model_size, Filter_1, Filter_2, Filter_3, Filter_4]
         output = [sum(i)  if (isinstance(i,list)) else i for i in output]
 
         if output_total == True:

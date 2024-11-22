@@ -98,7 +98,25 @@ def verify_if_measurements_are_detministic(outcomes_data, verbose: bool = False)
     #Return if no measurment encouters problems or verbose = True
     return return_value
 
-def preprocess_measurement_data_single(read_file, folder, measurement_variable):
+def preprocess_measurement_data(read_file, folder, measurement_variable, measurement_variable2 = None):
+    """
+        This puts all measurement data in a fixed sturcture.
+
+    Args:
+        read_file:  This is the filename of the JSON measurement file
+        folder:     This is the folder in which the data file is located. Note thate this always gets appended with ~/*Project_folder*\\data\\data
+        measurement_variable:   The name of the variable which should be iterated over
+        measurement_variable2   The name of the second variable which could be iterated over
+    Returns:
+        results:                Numpy array of the data with structure [i][j][k]([l])
+                                    i   = 0 For Measured data, 1 for expected data, which is also extracted form the measurement file
+                                    j   = The measurement rank parameter, [0] is reserved for the model which is not compressed. The the rest is e.g. [0.01, 0.05, 0.1 ect.
+                                    k   = The first iterable measurment parameter i.e. if the measurement is iterated over [1,2,4.8] Then k represent this index
+                                    l   = Same as with k. Note that this is only present in the case a measurement paramteter is inserted.
+        measurment_parameters:  This will return a measurement struct which is retrieved from the JSON file
+        model_types:            This will returned the parameters which are iterated over i.e. uncomp and different ranks for CP
+    Raises
+    """
     with open(f"{os.getcwd()}\\data\\data\\{folder}\\{read_file}.json") as json_file:
         data = json.load(json_file)
 
@@ -106,11 +124,13 @@ def preprocess_measurement_data_single(read_file, folder, measurement_variable):
 
     #Re obtain the measurement class to know which elements are present
     measurement_parameters = measurement.from_dict(data["Setup_data"])
-
     model_types = ["uncomp"] + measurement_parameters.rank
 
-    results = np.zeros((2,len(model_types), len(measurement_parameters.in_channel)),int)
-
+    if measurement_variable2 == None:
+        results = np.zeros((2,len(model_types), len(getattr(measurement_parameters, measurement_variable))),int)
+    else:
+        results = np.zeros((2,len(model_types), len(getattr(measurement_parameters, measurement_variable)), len(getattr(measurement_parameters, measurement_variable2))),int)
+   
     #Sort all images for plotting
     for dif_parameter_result in data["outcomes"]: 
         first_index = None
@@ -121,12 +141,27 @@ def preprocess_measurement_data_single(read_file, folder, measurement_variable):
         else:
             first_index = model_types.index(dif_parameter_result["rank"])
 
-        second_index = measurement_parameters.in_channel.index(dif_parameter_result[f"{measurement_variable}"])
+        #Get second index, which is the index that is looped over during measurment.
+        datapoint = dif_parameter_result[f"{measurement_variable}"]
+        datapoint = datapoint[0] if isinstance(datapoint,list) else datapoint
+        second_index = getattr(measurement_parameters, measurement_variable).index(datapoint)
 
-        if first_index | second_index == None:
-            raise ValueError(f"Not all indices are valid. First index = {first_index} and second index = {second_index}")
-        
-        results[0,first_index,second_index] = dif_parameter_result["measurements"][0]["Total allocated RAM"] #As all data points are deterministic and do take the same values. We can just take the first measurement
-        results[1,first_index,second_index] = dif_parameter_result["Expected RAM total"]
+        if measurement_variable2 == None:
+            if first_index | second_index == None:
+                raise ValueError(f"Not all indices are valid. First index = {first_index} and second index = {second_index}")
+            
+            results[0,first_index,second_index] = dif_parameter_result["measurements"][0]["Total allocated RAM"] #As all data points are deterministic and do take the same values. We can just take the first measurement
+            results[1,first_index,second_index] = dif_parameter_result["Expected RAM total"]
+        else:
+            third_index = None
+            datapoint2 = dif_parameter_result[f"{measurement_variable2}"]
+            datapoint2 = datapoint2[0] if isinstance(datapoint2,list) else datapoint2
+            third_index = getattr(measurement_parameters, measurement_variable2).index(datapoint2)
+
+            if first_index | second_index | third_index == None:
+                raise ValueError(f"Not all indices are valid. First index = {first_index} and second index = {second_index}")
+            
+            results[0,first_index,second_index,third_index] = dif_parameter_result["measurements"][0]["Total allocated RAM"] #As all data points are deterministic and do take the same values. We can just take the first measurement
+            results[1,first_index,second_index,third_index] = dif_parameter_result["Expected RAM total"]
 
     return (results, measurement_parameters, model_types)

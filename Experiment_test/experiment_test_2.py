@@ -4,7 +4,7 @@ import os
 sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 
 
-import Experiment_test.experiment_runner as runner
+import Experiment_1.experiment_runner as runner
 import Experiment_1.experiment_helper_functions as helper
 import Experiment_1.CNN_models as CNN_models
 import torch
