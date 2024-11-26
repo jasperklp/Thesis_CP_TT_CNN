@@ -47,7 +47,8 @@ def main(measure_data, filename, routine = None):
     
     #Start expermint here.
     logger.info(f"Started at {start_date} {start_time}")
-    for in_channels, out_channels, kernel_size, stride, padding, dilation, image_size, rank, epochs in tqdm(iterator, total=measure_data.amount_of_measurements(iterator)):
+    for in_channels, out_channels, kernel_size, stride, padding, dilation, image_size, rank, epochs in tqdm(iterator, total=measure_data.amount_of_measurements(iterator)): # or use in iterator: for no tqdm (when print out is important)
+        # print(f"# of in_channels = {in_channels}, # of out_channels = {out_channels}")
         measurement_outputs.append(runner.model_runner(CNN_models.uncomp_model(in_channels=in_channels,out_channels=out_channels,kernel_size=kernel_size,padding=padding,stride=stride),epochs,image_size,verbose = False)) 
         for i in rank:
             measurement_outputs.append(runner.model_runner(CNN_models.cp_tensorly_model(in_channels=in_channels,out_channels=out_channels,kernel_size=kernel_size,padding=padding,rank=i,stride=stride),epochs,image_size, verbose = False))

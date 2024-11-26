@@ -446,7 +446,8 @@ def RAM_no_mkl(out_channel, out_width, out_height):
 
 def RAM_MKL(in_channel, out_channel, kernel_size, in_width, in_height, out_width,out_height):
     Filter = []
-    Filter.append(get_mulitple_of_SIMD(in_channel) * in_width * in_height)
+    if ((in_channel > 7) | (math.prod(kernel_size) == 1)):
+        Filter.append(get_mulitple_of_SIMD(in_channel) * in_width * in_height)
     Filter.append(get_mulitple_of_SIMD(out_channel) * get_mulitple_of_SIMD(in_channel) * kernel_size[0] * kernel_size[1])
     Filter.append(get_mulitple_of_SIMD(out_channel) * out_width * out_height)
     Filter.append(out_channel * out_width * out_height)
@@ -462,7 +463,7 @@ def RAM_MKL_1x1_conv(rank,kernel_size : int, in_height, in_width,out_height,out_
             1 and#It is assumed there is no batching:
             (rank * in_height * in_width <= 20480)
     ):
-        print("no_MKL")
+        # print("no_MKL")
         return RAM_no_mkl(rank, out_height, out_width) * (kernel_size + 1)
     else :
         Filter = []
@@ -470,7 +471,7 @@ def RAM_MKL_1x1_conv(rank,kernel_size : int, in_height, in_width,out_height,out_
         Filter.append(get_mulitple_of_SIMD(rank) * kernel_size)
         Filter.append(get_mulitple_of_SIMD(rank)* out_width * out_height)
         Filter.append(rank* out_width * out_height)
-        print("MKL")
+        # print("MKL")
     return Filter
 
 def RAM_choose_MKL_or_nativePT(in_channel, out_channel, kernel_size, stride, padding, dilation, in_width, in_height, out_width,out_height, extra_kernel_copy = False):
@@ -491,10 +492,10 @@ def RAM_choose_MKL_or_nativePT(in_channel, out_channel, kernel_size, stride, pad
             (1 * in_channel * in_width * in_height > 20480) #Assume batch size larger than 1
         )
     ):
-        print("MKL")
+        # print("MKL")
         return RAM_MKL(in_channel,out_channel,kernel_size,in_width, in_height, out_width, out_height)
     else:
-        print("no_MKL")
+        # print("no_MKL")
         if math.prod(kernel_size) == 1:
             if extra_kernel_copy == True:
                 return RAM_no_mkl(out_channel,out_width,out_height)[0] + in_channel * out_channel

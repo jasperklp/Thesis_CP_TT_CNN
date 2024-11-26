@@ -15,6 +15,7 @@ def main():
     #kernel_size()
     image_size_default_pytorch()
     # kernel_size_default_pytorch()
+    # mkl_switch_over_default_pytorch()
 
 def in_channel_default_pytorch():
     #First test dependence on in_channel
@@ -45,8 +46,8 @@ def out_channel_default_pytorch():
     verify_model_matching_test_no_MKL.main(measure_data_out_channel,filename_out_channel)
 
 def image_size_default_pytorch():
-    measurement_data_image_size = measurement(in_channel = [4] #, 16, 128 ,512],
-                                              out_channel = [4] #, 16, 128 ,512],
+    measurement_data_image_size = measurement(in_channel = [4,16, 128 ,512],
+                                              out_channel = [4, 16, 128 ,512],
                                               kernel_size=3,
                                               padding=1,
                                               rank=[0.01,0.05,0.1,0.25,0.5,0.75,1.0],
@@ -69,6 +70,18 @@ def kernel_size_default_pytorch():
     filename = f"verify_model_matching_{inspect.currentframe().f_code.co_name}" #Gives folder name of the current out channel
     print(f"The filename is {filename}")
     verify_model_matching_test_no_MKL.main(measurement_data_kernel_size,filename, routine="same_in_out_same_kernel_pad")
+
+def mkl_switch_over_default_pytorch():
+    measurement_data = measurement( in_channel =  [7,7,7, 8,8,8, 9,9,9] ,
+                                    out_channel=  [7,8,9, 7,8,9, 7,8,9],
+                                    kernel_size=[3],
+                                    padding=[1],
+                                    rank=[0.01,0.05,0.1,0.25,0.5,0.75,1.0],
+                                    image_size= 512,
+                                    epochs=1)
+    filename = f"verify_model_matching_{inspect.currentframe().f_code.co_name}" #Gives folder name of the current out channel
+    print(f"The filename is {filename}")
+    verify_model_matching_test_no_MKL.main(measurement_data,filename, routine="same_in_out")
 
     
 def in_channel():

@@ -471,3 +471,14 @@ def get_date_time(delete_microseconds : bool = False):
     time = time.replace(":",".")
     return (date , time)
 
+def get_total_mem_per_filter(Filter_per_model,verbose : bool = False):
+    output = []
+    for record_function in Filter_per_model:
+        memory_total_alloc = 0
+        for memory_event in record_function["Events"]:
+            memory = memory_event.get("Bytes")
+            if memory > 0:
+                memory_total_alloc += memory
+        output.append({record_function.get("name") : memory_total_alloc})
+    return output
+        

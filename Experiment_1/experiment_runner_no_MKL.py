@@ -34,7 +34,7 @@ def model_runner(model, epochs : int, image_size : int|tuple, device : str = 'cp
 
     logger.info(f"Model is {model.name} with settings:  \
                 \n \t in_channels ={model_information["in_channels"]} , \
-                \n \t out_channels = {model_information["in_channels"]}, \
+                \n \t out_channels = {model_information["out_channels"]}, \
                 \n \t kernel_size = {model_information["kernel_size"]},\
                 \n \t padding = {model_information["padding"]},\
                 \n \t image_size = {image_size}\n"
@@ -42,7 +42,7 @@ def model_runner(model, epochs : int, image_size : int|tuple, device : str = 'cp
 
     if model_information.get("rank") != None:
         logger.info(f"Rank = {model_information["rank"]}")
-        print(model_information["rank"])
+        # print(model_information["rank"])
     #All paramteres will be validated.
     image_size = calc_expectation.check_int_or_tuple_of_int(image_size, "image_size")
     if not(issubclass(type(model),torch.nn.Module)):
@@ -77,7 +77,7 @@ def model_runner(model, epochs : int, image_size : int|tuple, device : str = 'cp
 
     measurements = []
     with torch.no_grad():
-        with torch.backends.mkldnn.verbose(torch.backends.mkldnn.VERBOSE_ON):
+        # with torch.backends.mkldnn.verbose(torch.backends.mkldnn.VERBOSE_ON):
             for i in range(epochs):
                 with profile(activities=[ProfilerActivity.CPU], 
                     profile_memory=True,
@@ -159,6 +159,7 @@ def model_runner(model, epochs : int, image_size : int|tuple, device : str = 'cp
         events = data["traceEvents"]
         (measurement["Peak allocated RAM"],measurement["Total allocated RAM"]) = helper.get_peak_and_total_alloc_memory(events, verbose=verbose)
         measurement["Filter per model"] = helper.json_get_memory_changes_per_model_ref(data, verbose=verbose)
+        measurement["Filter_per_model_total_mem"] = helper.get_total_mem_per_filter(measurement["Filter per model"], verbose = verbose)
         json_file.close()
         output["measurements"].append(measurement)
 

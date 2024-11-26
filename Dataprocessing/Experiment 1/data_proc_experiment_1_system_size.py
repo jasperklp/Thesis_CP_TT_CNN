@@ -12,7 +12,7 @@ import matplotlib.pyplot as plt
 def main():
     use_df_pytorch = True
     if use_df_pytorch == True:
-        read_file  = "2024-11-22_13.24.57"
+        read_file  = "2024-11-22_15.08.10"
         folder = "verify_model_matching_image_size_default_pytorch"
     else:
         read_file  = "2024-11-12_11.22.45"
