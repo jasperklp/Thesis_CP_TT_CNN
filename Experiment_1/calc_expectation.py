@@ -353,6 +353,15 @@ def get_theoretical_dataset_for_plot(in_channels: list, out_channels: list, kern
     return data
     
 def get_mulitple_of_SIMD(value, SIMD_size:int  = 8):
+    """
+        Makes sure that all values are in the range of the SIMD size.
+        
+        Should act as a ceil(value SIMD_size) in which ceil(SIMD_size,SIMD_size) = SIMD_size
+
+        Args:
+            value       : Value for which the SIMD size is determined.
+            SIMD_size   : Amount of data entries a processor can take for one instruction. For SSE4.2/AVX2 this is 8 for AVX512 this is 16
+    """
     if (value % SIMD_size) == 0:
         return value
     else:
@@ -360,6 +369,24 @@ def get_mulitple_of_SIMD(value, SIMD_size:int  = 8):
 
 
 def get_mkldnn_ram(in_channel, out_channel, kernel_size, image, method, stride, padding, dilation, rank = None, output_total:bool = True, bytes_per_float = 4):
+    """
+        Function gets RAM needed for an experiment when the use of MKL is forced trough an MKL input.
+
+        To get the match for these results one needs to force intel MKL. This can be achieved by converting the input into MKL format.
+
+    Args:
+        in_channel:         #of inchannels for the undecomposed system.
+        out_channel:         # of out channels for the undecomposed system.
+        kernel_size:         The kernel size of the undecomposed system.
+        image:              # input image size
+        method:             Either "uncomp" or "cp"
+        stride              Stride of the original system.
+        padding             padding of the input image
+        dilation            dilation of the input image
+        rank:               Rank of the CP system. This can be a float or an int
+        output_total:       Decides whether to give the output as a total per filter/input/model_copy or total
+        bytes_per_float:    Asks for the amounts of bytes a single element taks (e.g. 4 for float, 8 for double.)
+    """
     #Check input parameters which could ether be an int or a tuple of ints.
     [kernel_size, stride, padding, dilation, image, rank] = validate_MAC_or_RAM_calc_input(kernel_size, stride, padding, dilation, image, method, rank, in_channel, out_channel)
     #Calculate the output image as it will always have the same shape
@@ -442,9 +469,33 @@ def get_mkldnn_ram(in_channel, out_channel, kernel_size, image, method, stride, 
 
 
 def RAM_no_mkl(out_channel, out_width, out_height):
+    """
+    Gives the amount of expected RAM when no intel MKL is used and groups is set to 1.
+
+    Args:
+        out_channel : Number of outchannels of the layer
+        out_width   : Width of the output image
+        out_height  : Height of the output image
+    Returns
+        The amount of memory for that layer.
+    """
     return [out_channel*out_width*out_height]
 
 def RAM_MKL(in_channel, out_channel, kernel_size, in_width, in_height, out_width,out_height):
+    """
+        Gives the amount of RAM for a layer with the use of intel MKL in the non-forced case.
+
+        Args:
+            in_channel      : Number of inchannels
+            out_channel     : Number of outchannels
+            kernel_size     : Kernel_size
+            in_width        : Width of the input image of that layer.
+            in_height       : Height of the input image of that layer.
+            out_width       : Width  of the output image of that layer.
+            out_height      : Height of the output image of that layer.
+        Returns
+            The amount of memory for that layer.
+    """
     Filter = []
     if ((in_channel > 7) | (math.prod(kernel_size) == 1)):
         Filter.append(get_mulitple_of_SIMD(in_channel) * in_width * in_height)
@@ -455,8 +506,19 @@ def RAM_MKL(in_channel, out_channel, kernel_size, in_width, in_height, out_width
     return Filter
 
 def RAM_MKL_1x1_conv(rank,kernel_size : int, in_height, in_width,out_height,out_width):
-    
-    
+    """
+        This function calculats the amount of RAM for the 1x1 layer in the non-forced case.
+
+        Args:
+            rank            : Rank of the layer
+            kernel_size     : kernel_size of the layer
+            in_width        : Width of the input image of that layer.
+            in_height       : Height of the input image of that layer.
+            out_width       : Width  of the output image of that layer.
+            out_height      : Height of the output image of that layer.
+        Returns:
+            The amount of RAM for that layer.
+    """
     #In case rank is one, the number of groups is one and you get another situation.
     if (    (rank ==  1) and 
             kernel_size <= 3 and
@@ -475,6 +537,28 @@ def RAM_MKL_1x1_conv(rank,kernel_size : int, in_height, in_width,out_height,out_
     return Filter
 
 def RAM_choose_MKL_or_nativePT(in_channel, out_channel, kernel_size, stride, padding, dilation, in_width, in_height, out_width,out_height, extra_kernel_copy = False):
+    """
+        For a non-grouped layer this function choses whether MKL or Pytorch is used for the non-forced case
+
+        For more information on the decion paramters see: https://github.com/pytorch/pytorch/blob/a440a01832ace3a9fbff3485eaa0ff0edeb01d09/aten/src/ATen/native/Convolution.cpp
+
+    Args:
+        in_channel:     : Number of inchannels for the undecomposed system.
+        out_channel:    : Number of out channels for the undecomposed system.
+        kernel_size:    : The kernel size of the undecomposed system.
+        image:          : Input image size
+        method:         : Either "uncomp" or "cp"
+        stride          : Stride of the original system.
+        padding         : padding of the input image
+        dilation        : dilation of the input image
+        in_width        : Width of the input image of that layer.
+        in_height       : Height of the input image of that layer.
+        out_width       : Width  of the output image of that layer.
+        out_height      : Height of the output image of that layer.
+        extra_kernel_copy : (default = False) Gives an extra copy of the kernel. This is sometimes the case but only decuced empirically.
+    Returns:
+        Amount of memory that gets assigned in the given layer.
+    """
     if (
         1 and  
         1 and
@@ -509,6 +593,25 @@ def RAM_choose_MKL_or_nativePT(in_channel, out_channel, kernel_size, stride, pad
 
 
 def get_RAM_realistic(in_channel, out_channel, kernel_size, image, method, stride, padding, dilation, rank = None, output_total:bool = True, bytes_per_float = 4,SIMD_size : int = 8):
+    """
+        Function gets RAM needed for an experiment when MKL may be used, but it is up to pytorch to decide.
+
+        To get the match for these results one needs to have intel MKLDNN activated, but not forced.
+        I.e. MKLDNN.is_avaliable() should be true, but further no adaptions should be done.
+
+    Args:
+        in_channel:         #of inchannels for the undecomposed system.
+        out_channel:         # of out channels for the undecomposed system.
+        kernel_size:         The kernel size of the undecomposed system.
+        image:              # input image size
+        method:             Either "uncomp" or "cp"
+        stride              Stride of the original system.
+        padding             padding of the input image
+        dilation            dilation of the input image
+        rank:               Rank of the CP system. This can be a float or an int
+        output_total:       Decides whether to give the output as a total per filter/input/model_copy or total
+        bytes_per_float:    Asks for the amounts of bytes a single element taks (e.g. 4 for float, 8 for double.)
+    """
     #Check input parameters which could ether be an int or a tuple of ints.
     [kernel_size, stride, padding, dilation, image, rank] = validate_MAC_or_RAM_calc_input(kernel_size, stride, padding, dilation, image, method, rank, in_channel, out_channel)
     #Calculate the output image as it will always have the same shape
