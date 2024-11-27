@@ -271,7 +271,7 @@ def get_function_call_for_mem_ref(events):
                 dif_opt = dif
                 j["Operation name"] = i
         if (dif_opt == -1):
-            #warnings.warn("There are memory events without an assigned cpu operation")
+            warnings.warn("There are memory events without an assigned cpu operation")
             all_memory_events_are_good = False
         
     # if all_memory_events_are_good == False:

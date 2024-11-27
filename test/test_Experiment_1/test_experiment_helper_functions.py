@@ -29,29 +29,30 @@ def test_json_mem():
         with pytest.raises(ValueError):
             helper.json_get_memory_changes_per_model_ref(data)
 
+#(Depricated) Should not emit as there will always be made a start end and inbetween record functions.
 # @pytest.mark.filterwarnings("ignore")
 # def test_json_mem_event_misses():
 #     with open(".//test//test_Experiment_1//test_json_2.json") as json_file:
 #         data = json.load(json_file)
 #         with pytest.warns(UserWarning, match="Not all memory events are added to a memory record"):
-#             helper.json_get_memory_changes_per_model_ref(data)
+#             helper.json_get_memory_changes_per_model_ref(data,True)
 
 
-
-def test_json_memory_events_without_assigned_operation():
-    with open(".//test//test_Experiment_1//test_json_2.json") as json_file:
-        data = json.load(json_file)
-        events = data["traceEvents"]
-        with pytest.warns(UserWarning, match="There are memory events without an assigned cpu operation"):
-            helper.get_function_call_for_mem_ref(events)
+# Turned of did not prove to be very usefull.
+# def test_json_memory_events_without_assigned_operation():
+#     with open(".//test//test_Experiment_1//test_json_2.json") as json_file:
+#         data = json.load(json_file)
+#         events = data["traceEvents"]
+#         with pytest.warns(UserWarning, match="There are memory events without an assigned cpu operation"):
+#             helper.get_function_call_for_mem_ref(events)
 
 def test_json_memory_events_succesful(capsys):
     with open(".//test//test_Experiment_1//test_json_3.json") as json_file:
         data = json.load(json_file)
         events = data["traceEvents"]
-        helper.json_get_memory_changes_per_model_ref(data)
+        helper.json_get_memory_changes_per_model_ref(data,True)
     captured = capsys.readouterr()
-    assert captured.out == f"Printing events\n\tStart\n\t{events[0]["name"]}\n\t\t{helper.name_number(events[3]["args"]["Bytes"])}\tfor operation {events[1]["name"]}\n\tEnd\nTotal allocated memory = 35.56Kb\nPeak memory = 35.56Kb\n"
+    assert captured.out == f"Printing events\n\tStart\n\t{events[0]["name"]}\n\t\t{helper.name_number(events[3]["args"]["Bytes"])}\tfor operation {events[1]["name"]}\n\tEnd\n"
 
 def test_get_total_alloc_and_bytes():
     with open(".//test//test_Experiment_1//test_json_3.json") as json_file:
