@@ -1,6 +1,7 @@
 import math
 import functools
 import numpy as np
+from tensorly import validate_tt_rank
 
 #Defaults
 #Gives the default number of bits for a memeory operation.
@@ -181,12 +182,11 @@ def ram_estimation_2d(in_channel : int, out_channel : int, kernel_size : int | t
         raise NotImplementedError
     elif method == 'tt':
         #Calculate ranks
-        ranks = validate_tt_rank((in_channel, kernel_size[0], kernel_size[1], out_channel))
-        
+        ranks = validate_tt_rank((in_channel, kernel_size[0], kernel_size[1], out_channel),rank=rank)
         #Add storage for each of the kernels
         kernel_storage_size.append(in_channel * ranks[0])
-        kernel_storage_size.append(ranks[0] * kernel_size * ranks[1])
-        kernel_storage_size.append(ranks[1] * kernel_size[2] *ranks[2])
+        kernel_storage_size.append(ranks[0] * kernel_size[0] * ranks[1])
+        kernel_storage_size.append(ranks[1] * kernel_size[1] *ranks[2])
         kernel_storage_size.append(ranks[2]* out_channel)
 
         #Add filters for each of the kernels
