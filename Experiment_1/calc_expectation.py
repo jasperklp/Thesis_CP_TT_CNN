@@ -402,9 +402,15 @@ def get_mkldnn_ram(in_channel, out_channel, kernel_size, image, method, stride, 
 
         Input_image = sum([input_image,input_image])
         Model_size = sum([kernel])
-        Filter_1.append(get_mulitple_of_SIMD(in_channel)*math.prod(image)) #copy of the image
-        Filter_1.append(get_mulitple_of_SIMD(out_channel)*get_mulitple_of_SIMD(in_channel)*math.prod(kernel_size))
-        Filter_1.append(get_mulitple_of_SIMD(out_channel)*math.prod(image_out))
+        if in_channel > 7:
+            Filter_1.append(get_mulitple_of_SIMD(in_channel)*math.prod(image)) #copy of the image
+            Filter_1.append(get_mulitple_of_SIMD(out_channel)*get_mulitple_of_SIMD(in_channel)*math.prod(kernel_size))
+            Filter_1.append(get_mulitple_of_SIMD(out_channel)*math.prod(image_out))
+        else:
+            Filter_1.append(in_channel*math.prod(image)) #Copy of the image
+            Filter_1.append(get_mulitple_of_SIMD(in_channel) * out_channel * math.prod(kernel_size)) #Copy of the kernel
+            Filter_1.append(out_channel*math.prod(image_out)) #Convolution
+        
 
         output = [Input_image, Model_size, sum(Filter_1)]     
 
@@ -430,6 +436,7 @@ def get_mkldnn_ram(in_channel, out_channel, kernel_size, image, method, stride, 
         Input_image = sum([input_image,input_image])
         Model_size = sum([rank*in_channel, rank*kernel_size[0], rank*kernel_size[1],rank*out_channel])
 
+
         Filter_1.append(rank*in_channel) #Copy Kernel
         Filter_1.append(get_mulitple_of_SIMD(in_channel) *  math.prod(image)) #Copy input image
         Filter_1.append(get_mulitple_of_SIMD(rank)*get_mulitple_of_SIMD(in_channel)) #Reshape Kernel
@@ -437,16 +444,28 @@ def get_mkldnn_ram(in_channel, out_channel, kernel_size, image, method, stride, 
 
         Between_filter_1_and_2.append(rank*math.prod(image)) #reshape
 
-        Filter_2.append(rank * kernel_size[0]) #Copy kernel
-        Filter_2.append(get_mulitple_of_SIMD(rank)*math.prod(image)) #Reshape image
-        Filter_2.append(get_mulitple_of_SIMD(rank)*kernel_size[0]) #Reshape filter 2 kernel
-        Filter_2.append(get_mulitple_of_SIMD(rank) * image_out[0] * image[1])
+        if rank != 1:
+            Filter_2.append(rank * kernel_size[0]) #Copy kernel
+            Filter_2.append(get_mulitple_of_SIMD(rank)*math.prod(image)) #Reshape image
+            Filter_2.append(get_mulitple_of_SIMD(rank)*kernel_size[0]) #Reshape filter 2 kernel
+            Filter_2.append(get_mulitple_of_SIMD(rank) * image_out[0] * image[1])
 
-        Between_filter_2_and_3.append(0)
+            Between_filter_2_and_3.append(0)
 
-        Filter_3.append(rank*kernel_size[1]) #Copy kernel
-        Filter_3.append(get_mulitple_of_SIMD(rank)*kernel_size[1]) #Reshape kernel
-        Filter_3.append(get_mulitple_of_SIMD(rank)*math.prod(image_out)) #Convolution
+            Filter_3.append(rank*kernel_size[1]) #Copy kernel
+            Filter_3.append(get_mulitple_of_SIMD(rank)*kernel_size[1]) #Reshape kernel
+            Filter_3.append(get_mulitple_of_SIMD(rank)*math.prod(image_out)) #Convolution
+        
+        else:
+            Filter_2.append(get_mulitple_of_SIMD(rank) * kernel_size[1]) #Reshape kernel
+            Filter_2.append(get_mulitple_of_SIMD(rank) * image_out[0] * image_out[1])#Convolution
+
+            Between_filter_2_and_3.append(0)
+
+            Filter_3.append(image_out[0] * image[1])
+            Filter_3.append(get_mulitple_of_SIMD(rank) * kernel_size[1])
+            Filter_3.append(get_mulitple_of_SIMD(rank) * math.prod(image_out))
+
         
         Between_filter_3_and_4.append(rank*math.prod(image_out)) #Reshape output image to non-SIMD form
 
@@ -498,10 +517,10 @@ def RAM_MKL(in_channel, out_channel, kernel_size, in_width, in_height, out_width
     """
     Filter = []
     if ((in_channel > 7) | (math.prod(kernel_size) == 1)):
-        Filter.append(get_mulitple_of_SIMD(in_channel) * in_width * in_height)
-    Filter.append(get_mulitple_of_SIMD(out_channel) * get_mulitple_of_SIMD(in_channel) * kernel_size[0] * kernel_size[1])
-    Filter.append(get_mulitple_of_SIMD(out_channel) * out_width * out_height)
-    Filter.append(out_channel * out_width * out_height)
+        Filter.append(get_mulitple_of_SIMD(in_channel) * in_width * in_height) #Copy of the input image
+    Filter.append(get_mulitple_of_SIMD(out_channel) * get_mulitple_of_SIMD(in_channel) * kernel_size[0] * kernel_size[1]) #Copy of the kernel
+    Filter.append(get_mulitple_of_SIMD(out_channel) * out_width * out_height) #Convolution
+    Filter.append(out_channel * out_width * out_height) #Reshape of the output
 
     return Filter
 
@@ -577,12 +596,15 @@ def RAM_choose_MKL_or_nativePT(in_channel, out_channel, kernel_size, stride, pad
         )
     ):
         # print("MKL")
-        return RAM_MKL(in_channel,out_channel,kernel_size,in_width, in_height, out_width, out_height)
+        if extra_kernel_copy == True:
+            return RAM_MKL(in_channel,out_channel,kernel_size,in_width, in_height, out_width, out_height) + [in_channel * out_channel * math.prod(kernel_size)]
+        else:
+            return RAM_MKL(in_channel,out_channel,kernel_size,in_width, in_height, out_width, out_height)
     else:
         # print("no_MKL")
         if math.prod(kernel_size) == 1:
             if extra_kernel_copy == True:
-                return RAM_no_mkl(out_channel,out_width,out_height)[0] + in_channel * out_channel
+                return RAM_no_mkl(out_channel,out_width,out_height)[0] + in_channel * out_channel * math.prod(kernel_size)
             else:
                 return RAM_no_mkl(out_channel,out_width,out_height)
 

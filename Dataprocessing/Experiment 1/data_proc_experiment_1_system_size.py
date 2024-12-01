@@ -12,10 +12,10 @@ import matplotlib.pyplot as plt
 def main():
     use_df_pytorch = True
     if use_df_pytorch == True:
-        read_file  = "2024-11-22_15.08.10"
+        read_file  = "2024-11-29_17.25.11"
         folder = "verify_model_matching_image_size_default_pytorch"
     else:
-        read_file  = "2024-11-12_11.22.45"
+        read_file  = "2024-11-29_16.42.11"
         folder = "verify_model_matching_image_size"
 
     results, measurement_parameters, model_types = utils.preprocess_measurement_data(read_file,folder, "image_size", "in_channel")
@@ -110,7 +110,7 @@ def plot_image_size_expect_ratio(results, measurement_parameters, model_types):
         ax[i//2][i%2].set_xscale("log")
         ax[i//2][i%2].set_ylabel("Ratio")
         ax[i//2][i%2].set_xlabel("In_channels = out_channels = ")
-        # ax[i//2][i%2].set_ylim([0.5,1.1])
+        ax[i//2][i%2].set_ylim([0.9,1.1])
         ax[i//2][i%2].set_xticks(measurement_parameters.in_channel)
         ax[i//2][i%2].set_xticklabels(measurement_parameters.in_channel)
 

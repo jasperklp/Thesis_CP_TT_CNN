@@ -77,7 +77,7 @@ def model_runner(model, epochs : int, image_size : int|tuple, device : str = 'cp
 
     measurements = []
     with torch.no_grad():
-        # with torch.backends.mkldnn.verbose(torch.backends.mkldnn.VERBOSE_ON):
+        with torch.backends.mkldnn.verbose(torch.backends.mkldnn.VERBOSE_ON):
             for i in range(epochs):
                 with profile(activities=[ProfilerActivity.CPU], 
                     profile_memory=True,

@@ -10,12 +10,12 @@ import matplotlib.pyplot as plt
 
 
 def main():
-    use_df_pytorch = True
+    use_df_pytorch = False
     if use_df_pytorch == True:
         read_file = "2024-11-22_12.38.58"
         folder = "verify_model_matching_in_channel_default_pytorch"
     else:
-        read_file  = "2024-11-12_10.48.03"
+        read_file  = "2024-11-29_15.52.43"
         folder = "verify_model_matching_in_channel"
 
     
