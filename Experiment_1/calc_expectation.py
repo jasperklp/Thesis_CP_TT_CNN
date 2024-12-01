@@ -1,8 +1,6 @@
 import math
 import functools
 import numpy as np
-import torch
-from tensorly import validate_tt_rank
 
 #Defaults
 #Gives the default number of bits for a memeory operation.
