@@ -1,6 +1,7 @@
 import math
 import functools
 import numpy as np
+from tensorly import validate_tt_rank
 
 #Defaults
 #Gives the default number of bits for a memeory operation.
@@ -155,22 +156,22 @@ def ram_estimation_2d(in_channel : int, out_channel : int, kernel_size : int | t
     #Calculate the output image as it will always have the same shape
     image_out = calc_output_image_dim(kernel_size,stride, padding, dilation, image)
     
-    kernal_storage_size = []
+    kernel_storage_size = []
     filter_storage_size = []
     input_image_size    = in_channel * math.prod(image)
     output_image_size   = out_channel * math.prod(image_out)
 
     #Based on the mehtod, calculate the RAM required.
     if method == 'uncomp':
-        kernal_storage_size.append(in_channel * out_channel * math.prod(kernel_size))
+        kernel_storage_size.append(in_channel * out_channel * math.prod(kernel_size))
         filter_storage_size.append(0)
    
     elif method == 'cp' :
         #Add the storage size for each of the four kernels.
-        kernal_storage_size.append(in_channel * rank)
-        kernal_storage_size.append(kernel_size[0] * rank)
-        kernal_storage_size.append(kernel_size[1] * rank)
-        kernal_storage_size.append(out_channel * rank)
+        kernel_storage_size.append(in_channel * rank)
+        kernel_storage_size.append(kernel_size[0] * rank)
+        kernel_storage_size.append(kernel_size[1] * rank)
+        kernel_storage_size.append(out_channel * rank)
         
         #Insert the storage sizes of the consecutive filter images in a tuple
         filter_storage_size.append(image[0] * image[1] * rank)
@@ -180,17 +181,32 @@ def ram_estimation_2d(in_channel : int, out_channel : int, kernel_size : int | t
     elif method == 'tucker':
         raise NotImplementedError
     elif method == 'tt':
-        raise NotImplementedError
+        #Calculate ranks
+        ranks = validate_tt_rank((in_channel, kernel_size[0], kernel_size[1], out_channel))
+        
+        #Add storage for each of the kernels
+        kernel_storage_size.append(in_channel * ranks[0])
+        kernel_storage_size.append(ranks[0] * kernel_size * ranks[1])
+        kernel_storage_size.append(ranks[1] * kernel_size[2] *ranks[2])
+        kernel_storage_size.append(ranks[2]* out_channel)
+
+        #Add filters for each of the kernels
+        filter_storage_size.append(image[0] * image[1] * ranks[0])
+        filter_storage_size.append(image_out[0] * image[1] * ranks[1])
+        filter_storage_size.append(image_out[1] * image_out[1] * ranks[2])
+
+
+
     else : 
         raise ValueError(f'Give a valid method\nValid methods are:\nuncomp, cp, tt, tucker')
     
     per_element_multiplier = bits_per_element // 8 if output_in_bytes else bits_per_element 
 
     if output_total :
-        output_elements = input_image_size + sum(kernal_storage_size) + sum(filter_storage_size) + output_image_size
+        output_elements = input_image_size + sum(kernel_storage_size) + sum(filter_storage_size) + output_image_size
         return output_elements * per_element_multiplier
     else:
-        return [input_image_size*per_element_multiplier, [i*per_element_multiplier for i in kernal_storage_size], [i*per_element_multiplier for i in filter_storage_size],output_image_size*per_element_multiplier]
+        return [input_image_size*per_element_multiplier, [i*per_element_multiplier for i in kernel_storage_size], [i*per_element_multiplier for i in filter_storage_size],output_image_size*per_element_multiplier]
     
 
 
