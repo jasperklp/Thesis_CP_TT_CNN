@@ -10,7 +10,7 @@ import matplotlib.pyplot as plt
 
 
 def main():
-    use_df_pytorch = True
+    use_df_pytorch = False
     if use_df_pytorch == True:
         read_file  = "2024-11-29_17.25.11"
         folder = "verify_model_matching_image_size_default_pytorch"
@@ -20,8 +20,8 @@ def main():
 
     results, measurement_parameters, model_types = utils.preprocess_measurement_data(read_file,folder, "image_size", "in_channel")
 
-    # plot_image_size_data(results, measurement_parameters, model_types)
-    # plot_image_size_data_ratio(results, measurement_parameters, model_types)
+    plot_image_size_data(results, measurement_parameters, model_types)
+    plot_image_size_data_ratio(results, measurement_parameters, model_types)
     plot_image_size_expect_ratio(results, measurement_parameters, model_types)
 
 
@@ -77,10 +77,13 @@ def plot_image_size_data_ratio(results, measurement_parameters, model_types):
         ax[i//2][i%2].set_xscale("log")
         ax[i//2][i%2].set_ylabel("Ratio")
         ax[i//2][i%2].set_xlabel("In_channels = out_channels = ")
-        ax[i//2][i%2].set_ylim([0,10])
         ax[i//2][i%2].set_xticks(measurement_parameters.in_channel)
         ax[i//2][i%2].set_xticklabels(measurement_parameters.in_channel)
-        
+
+    ax[0][0].set_ylim([0,10]) 
+    ax[0][1].set_ylim([0,10])
+    ax[1][0].set_ylim([0,10]) 
+    ax[1][1].set_ylim([0,10])
 
 
     plt.suptitle("Memory for different image_sizes and in_channel sizes")

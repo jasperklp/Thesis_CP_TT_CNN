@@ -121,8 +121,13 @@ def validate_MAC_or_RAM_calc_input(kernel_size, stride, padding, dilation, image
                 rank = 1
         else :
             raise ValueError(f'CP rank must be an integer or a float')
-    elif(method == 'tucker') | (method == "tt"):
-        NotImplementedError(f'{method} is not implemented for this function')
+    elif method == "tt":
+        rank = validate_tt_rank((in_channel, kernel_size[0], kernel_size[1], out_channel),rank=rank)
+    
+    elif(method == 'tucker'):
+        raise NotImplementedError(f'{method} is not implemented for this function')
+    elif (method != "uncomp"):
+        raise ValueError(f"Method should be uncomp, cp, tucker or tt but method is {method}")
 
     return kernel_size, stride, padding, dilation, image, rank
 
@@ -180,19 +185,17 @@ def ram_estimation_2d(in_channel : int, out_channel : int, kernel_size : int | t
           
     elif method == 'tucker':
         raise NotImplementedError
-    elif method == 'tt':
-        #Calculate ranks
-        ranks = validate_tt_rank((in_channel, kernel_size[0], kernel_size[1], out_channel),rank=rank)
+    elif method == 'tt':      
         #Add storage for each of the kernels
-        kernel_storage_size.append(in_channel * ranks[0])
-        kernel_storage_size.append(ranks[0] * kernel_size[0] * ranks[1])
-        kernel_storage_size.append(ranks[1] * kernel_size[1] *ranks[2])
-        kernel_storage_size.append(ranks[2]* out_channel)
+        kernel_storage_size.append(in_channel * rank[0])
+        kernel_storage_size.append(rank[0] * kernel_size[0] * rank[1])
+        kernel_storage_size.append(rank[1] * kernel_size[1] * rank[2])
+        kernel_storage_size.append(rank[2]* out_channel)
 
         #Add filters for each of the kernels
-        filter_storage_size.append(image[0] * image[1] * ranks[0])
-        filter_storage_size.append(image_out[0] * image[1] * ranks[1])
-        filter_storage_size.append(image_out[1] * image_out[1] * ranks[2])
+        filter_storage_size.append(image[0] * image[1] * rank[0])
+        filter_storage_size.append(image_out[0] * image[1] * rank[1])
+        filter_storage_size.append(image_out[1] * image_out[1] * rank[2])
 
 
 

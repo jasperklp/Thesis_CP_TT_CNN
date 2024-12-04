@@ -20,7 +20,7 @@ def main():
     measurement = helper.measurement(m_in_channel, m_out_channel, m_kernel_size, m_image_size, m_rank, m_padding)
 
     results  = np.zeros((3, len(m_rank), len(m_in_channel), len(m_image_size))) #model type , #rank, #in_out_channel #image_size
-    print(f"{results.shape=}")
+    # print(f"{results.shape=}")
 
     for in_channel, out_channel, kernel_size, stride, padding, dilation, image_size, rank, _ in measurement.iter_same_in_out():
         for r in rank:
@@ -36,7 +36,8 @@ def plot_elements_tt_vs_cp(results, measurements):
     fig,ax = plt.subplots(2,2)
     models = ["cp", "tt", "uncomp"]
     ranks = measurements.rank
-    model_types = [f"{model} {rank}" for model in models for rank in ranks if ((model != "uncomp") | (rank == ranks[0]))]
+    model_types = [f"{model} {rank}" for model in models for rank in ranks if ((model != "uncomp"))]
+    model_types.append("uncomp")
     for i,item in enumerate(model_types):
         ax[0][0].scatter(measurements.in_channel,results[i//len(ranks), i%len(ranks), :, 0])
         ax[0][1].scatter(measurements.in_channel,results[i//len(ranks), i%len(ranks), :, 1])
@@ -51,6 +52,7 @@ def plot_elements_tt_vs_cp(results, measurements):
         ax[i//2][i%2].set_xticks(measurements.in_channel)
         ax[i//2][i%2].set_xticklabels(measurements.in_channel)
     
+    plt.suptitle("Memory elements for different CNN layer types.")
     plt.legend(model_types, loc = 'lower left', bbox_to_anchor = (1.05,1.05),borderaxespad=0.)
     plt.tight_layout(rect=[0,0,0.9,1])
     fig.subplots_adjust(hspace=0.5, right=0.8)
@@ -58,7 +60,7 @@ def plot_elements_tt_vs_cp(results, measurements):
 
 def plot_ratio_elements_tt_vs_cp(results, measurements):
     fig,ax = plt.subplots(2,2)
-    plt.suptitle("Ratio (TT/CP) of amount of elemants")
+    plt.suptitle("Ratio (TT/CP) of amount of elements")
     for i,r in enumerate(measurements.rank):
         ax[0][0].scatter(measurements.in_channel,results[1, i, :, 0]/results[0, i, :, 0])
         ax[0][1].scatter(measurements.in_channel,results[1, i, :, 1]/results[0, i, :, 1])
