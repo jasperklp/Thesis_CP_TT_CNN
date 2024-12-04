@@ -11,18 +11,23 @@ import matplotlib.pyplot as plt
 
 def main():
     df_pytorch = False
-    if df_pytorch == True:
-        read_file  = "2024-11-12_10.49.10"
-        folder = "verify_model_matching_out_channel"
+    tt = True
+    if tt == True:
+        read_file  = "2024-12-04_16.13.13"
+        folder = "verify_model_matching_tt_out_channel_default_pytorch"
     else:
-        read_file = "2024-11-29_14.54.23"
-        folder = "verify_model_matching_out_channel"
+        if df_pytorch == True:
+            read_file  = "2024-11-12_10.49.10"
+            folder = "verify_model_matching_out_channel_default_pytorch"
+        else:
+            read_file = "2024-11-29_14.54.23"
+            folder = "verify_model_matching_out_channel"
 
     results, measurement_parameters, model_types = utils.preprocess_measurement_data(read_file,folder, "out_channel")
 
-    # plot_out_channel_data(results, measurement_parameters, model_types)
+    plot_out_channel_data(results, measurement_parameters, model_types)
     plot_out_channel_ratio_expected(results, measurement_parameters, model_types)
-    #plot_out_channel_ratio_uncomp(results, measurement_parameters, model_types)
+    plot_out_channel_ratio_uncomp(results, measurement_parameters, model_types)
 
 
 #Create figure

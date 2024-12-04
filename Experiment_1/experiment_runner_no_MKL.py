@@ -146,9 +146,9 @@ def model_runner(model, epochs : int, image_size : int|tuple, device : str = 'cp
     output["Expected MAC"] = expected_MAC
     output["Expected MAC total"] = expected_MAC_total
     output["Expected RAM"] = model.DefaultPT_RAM(image_size)
-    output["Expected RAM total"] = model.DefaultPT_RAM(image_size,output_total=True)
+    output["Expected RAM total"] = sum(output.get("Expected RAM"))
 
-    if output.get("model_type") == "cp":
+    if output.get("model_type") != "uncomp":
         output["rank"]      = model_information.get("rank")
         output["rank_int"]  = model_information.get("rank_int")
     

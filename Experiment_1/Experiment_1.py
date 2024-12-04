@@ -4,17 +4,17 @@ from experiment_helper_functions import measurement
 import logging
 import inspect
 
-logger = logging.getLogger(__name__)
+
 
 def main():
     # in_channel()
     # out_channel()
     # image_size()
     # kernel_size()
-    # in_channel_default_pytorch()
-    # out_channel_default_pytorch()
+    in_channel_default_pytorch()
+    out_channel_default_pytorch()
     image_size_default_pytorch()
-    # kernel_size_default_pytorch()
+    kernel_size_default_pytorch()
     # mkl_switch_over_default_pytorch()
 
 def in_channel_default_pytorch():
@@ -28,7 +28,7 @@ def in_channel_default_pytorch():
                                         epochs      = 1
                                         )
 
-    filename_in_channel = f"verify_model_matching_{inspect.currentframe().f_code.co_name}"
+    filename_in_channel = f"verify_model_matching_tt_{inspect.currentframe().f_code.co_name}"
     print(filename_in_channel)
     verify_model_matching_test_no_MKL.main(measure_data_in_channel,filename_in_channel)
 
@@ -41,7 +41,7 @@ def out_channel_default_pytorch():
                                         image_size  = 128,
                                         epochs      = 1
                                         ) 
-    filename_out_channel = f"verify_model_matching_{inspect.currentframe().f_code.co_name}" #Gives folder name of the current out channel
+    filename_out_channel = f"verify_model_matching_tt_{inspect.currentframe().f_code.co_name}" #Gives folder name of the current out channel
     print(filename_out_channel)
     verify_model_matching_test_no_MKL.main(measure_data_out_channel,filename_out_channel)
 
@@ -55,7 +55,7 @@ def image_size_default_pytorch():
                                               epochs=1
                                               )
 
-    filename = f"verify_model_matching_{inspect.currentframe().f_code.co_name}" #Gives folder name of the current out channel
+    filename = f"verify_model_matching_tt_{inspect.currentframe().f_code.co_name}" #Gives folder name of the current out channel
     print(filename)
     verify_model_matching_test_no_MKL.main(measurement_data_image_size,filename, routine = "same_in_out")
 
@@ -67,7 +67,7 @@ def kernel_size_default_pytorch():
                                               rank=[0.01,0.05,0.1,0.25,0.5,0.75,1.0],
                                               image_size=128,
                                               epochs=1)
-    filename = f"verify_model_matching_{inspect.currentframe().f_code.co_name}" #Gives folder name of the current out channel
+    filename = f"verify_model_matching_tt_{inspect.currentframe().f_code.co_name}" #Gives folder name of the current out channel
     print(filename)
     verify_model_matching_test_no_MKL.main(measurement_data_kernel_size,filename, routine="same_in_out_same_kernel_pad")
 

@@ -11,17 +11,22 @@ import matplotlib.pyplot as plt
 
 def main():
     use_df_pytorch = False
-    if use_df_pytorch == True:
-        read_file  = "2024-11-29_17.25.11"
-        folder = "verify_model_matching_image_size_default_pytorch"
+    tt = True
+    if tt == True:
+        read_file  = "2024-12-04_16.07.09"
+        folder = "verify_model_matching_tt_image_size_default_pytorch"
     else:
-        read_file  = "2024-11-29_16.42.11"
-        folder = "verify_model_matching_image_size"
+        if use_df_pytorch == True:
+            read_file  = "2024-11-29_17.25.11"
+            folder = "verify_model_matching_image_size_default_pytorch"
+        else:
+            read_file  = "2024-11-29_16.42.11"
+            folder = "verify_model_matching_image_size"
 
     results, measurement_parameters, model_types = utils.preprocess_measurement_data(read_file,folder, "image_size", "in_channel")
 
-    plot_image_size_data(results, measurement_parameters, model_types)
-    plot_image_size_data_ratio(results, measurement_parameters, model_types)
+    # plot_image_size_data(results, measurement_parameters, model_types)
+    # plot_image_size_data_ratio(results, measurement_parameters, model_types)
     plot_image_size_expect_ratio(results, measurement_parameters, model_types)
 
 

@@ -206,7 +206,8 @@ def tt_conv(x, tt_tensor, bias=None, stride=1, padding=0, dilation=1):
 
     # First conv == tensor contraction
     # from (1, in_channels, rank) to (rank == out_channels, in_channels, 1)
-    x = F.conv1d(x, tl.transpose(tt_tensor.factors[0], [2, 1, 0]))
+    with record_function("Filter_image 1"):
+        x = F.conv1d(x, tl.transpose(tt_tensor.factors[0], [2, 1, 0]))
 
     x_shape[1] = x.shape[1]#rank[1]
     x = x.reshape(x_shape)
@@ -222,7 +223,8 @@ def tt_conv(x, tt_tensor, bias=None, stride=1, padding=0, dilation=1):
     x = x.reshape((batch_size, x_shape[1], -1))
     # Last conv == tensor contraction
     # From (rank, out_channels, 1) to (out_channels, in_channels == rank, 1)
-    x = F.conv1d(x, tl.transpose(tt_tensor.factors[-1], [1, 0, 2]), bias=bias)
+    with record_function("Fiter_image 4"):
+        x = F.conv1d(x, tl.transpose(tt_tensor.factors[-1], [1, 0, 2]), bias=bias)
 
     x_shape[1] = x.shape[1]
     x = x.reshape(x_shape)

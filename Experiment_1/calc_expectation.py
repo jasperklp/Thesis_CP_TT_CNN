@@ -2,6 +2,9 @@ import math
 import functools
 import numpy as np
 from tensorly import validate_tt_rank
+import logging
+
+logger = logging.getLogger(__name__)
 
 #Defaults
 #Gives the default number of bits for a memeory operation.
@@ -122,8 +125,10 @@ def validate_MAC_or_RAM_calc_input(kernel_size, stride, padding, dilation, image
         else :
             raise ValueError(f'CP rank must be an integer or a float')
     elif method == "tt":
+        # Rank will be of form 1 R1, R2, R3, 1. 
+        # Thus for a network consisting of four cores one will have 5 ranks of which the outer two are 1. (They're not connected to anything)
         rank = validate_tt_rank((in_channel, kernel_size[0], kernel_size[1], out_channel),rank=rank)
-    
+
     elif(method == 'tucker'):
         raise NotImplementedError(f'{method} is not implemented for this function')
     elif (method != "uncomp"):
@@ -187,15 +192,17 @@ def ram_estimation_2d(in_channel : int, out_channel : int, kernel_size : int | t
         raise NotImplementedError
     elif method == 'tt':      
         #Add storage for each of the kernels
-        kernel_storage_size.append(in_channel * rank[0])
-        kernel_storage_size.append(rank[0] * kernel_size[0] * rank[1])
-        kernel_storage_size.append(rank[1] * kernel_size[1] * rank[2])
-        kernel_storage_size.append(rank[2]* out_channel)
+        # print(rank)
+        kernel_storage_size.append(in_channel * rank[1])
+        kernel_storage_size.append(rank[1] * kernel_size[0] * rank[2])
+        kernel_storage_size.append(rank[2] * kernel_size[1] * rank[3])
+        kernel_storage_size.append(rank[3]* out_channel)
 
         #Add filters for each of the kernels
-        filter_storage_size.append(image[0] * image[1] * rank[0])
-        filter_storage_size.append(image_out[0] * image[1] * rank[1])
-        filter_storage_size.append(image_out[1] * image_out[1] * rank[2])
+        # print(rank)
+        filter_storage_size.append(image[0] * image[1] * rank[1])
+        filter_storage_size.append(image_out[0] * image[1] * rank[2])
+        filter_storage_size.append(image_out[1] * image_out[1] * rank[3])
 
 
 
@@ -503,8 +510,10 @@ def get_mkldnn_ram(in_channel, out_channel, kernel_size, image, method, stride, 
             return sum(output)*bytes_per_float
         else:
             return [i*bytes_per_float for i in output]
+        
+    
 
-    raise ValueError("Method must be uncomp or CP")
+    raise ValueError("Method must be uncomp, tt or CP")
 
 
 def RAM_no_mkl(out_channel, out_width, out_height):
@@ -518,7 +527,7 @@ def RAM_no_mkl(out_channel, out_width, out_height):
     Returns
         The amount of memory for that layer.
     """
-    return [out_channel*out_width*out_height]
+    return out_channel*out_width*out_height
 
 def RAM_MKL(in_channel, out_channel, kernel_size, in_width, in_height, out_width,out_height):
     """
@@ -542,7 +551,7 @@ def RAM_MKL(in_channel, out_channel, kernel_size, in_width, in_height, out_width
     Filter.append(get_mulitple_of_SIMD(out_channel) * out_width * out_height) #Convolution
     Filter.append(out_channel * out_width * out_height) #Reshape of the output
 
-    return Filter
+    return sum(Filter)
 
 def RAM_MKL_1x1_conv(rank,kernel_size : int, in_height, in_width,out_height,out_width):
     """
@@ -565,8 +574,10 @@ def RAM_MKL_1x1_conv(rank,kernel_size : int, in_height, in_width,out_height,out_
             (rank * in_height * in_width <= 20480)
     ):
         # print("no_MKL")
+        logger.debug("No MKL")
         return RAM_no_mkl(rank, out_height, out_width) * (kernel_size + 1)
     else :
+        logger.debug("MKL")
         Filter = []
         Filter.append(get_mulitple_of_SIMD(rank) * in_width * in_height)
         Filter.append(get_mulitple_of_SIMD(rank) * kernel_size)
@@ -575,7 +586,7 @@ def RAM_MKL_1x1_conv(rank,kernel_size : int, in_height, in_width,out_height,out_
         # print("MKL")
     return Filter
 
-def RAM_choose_MKL_or_nativePT(in_channel, out_channel, kernel_size, stride, padding, dilation, in_width, in_height, out_width,out_height, extra_kernel_copy = False):
+def     RAM_choose_MKL_or_nativePT(in_channel, out_channel, kernel_size, stride, padding, dilation, in_width, in_height, out_width,out_height, extra_kernel_copy = False):
     """
         For a non-grouped layer this function choses whether MKL or Pytorch is used for the non-forced case
 
@@ -598,6 +609,11 @@ def RAM_choose_MKL_or_nativePT(in_channel, out_channel, kernel_size, stride, pad
     Returns:
         Amount of memory that gets assigned in the given layer.
     """
+    memory = 0
+    if extra_kernel_copy == True:
+        memory += in_channel * out_channel * math.prod(kernel_size)
+
+
     if (
         1 and  
         1 and
@@ -615,21 +631,27 @@ def RAM_choose_MKL_or_nativePT(in_channel, out_channel, kernel_size, stride, pad
             (1 * in_channel * in_width * in_height > 20480) #Assume batch size larger than 1
         )
     ):
-        # print("MKL")
-        if extra_kernel_copy == True:
-            return RAM_MKL(in_channel,out_channel,kernel_size,in_width, in_height, out_width, out_height) + [in_channel * out_channel * math.prod(kernel_size)]
-        else:
-            return RAM_MKL(in_channel,out_channel,kernel_size,in_width, in_height, out_width, out_height)
+        logger.debug("MKL")
+        memory += RAM_MKL(in_channel,out_channel,kernel_size,in_width, in_height, out_width, out_height)
+    
     else:
-        # print("no_MKL")
+        logger.debug("No MKL")
         if math.prod(kernel_size) == 1:
-            if extra_kernel_copy == True:
-                return RAM_no_mkl(out_channel,out_width,out_height)[0] + in_channel * out_channel * math.prod(kernel_size)
-            else:
-                return RAM_no_mkl(out_channel,out_width,out_height)
+            memory += RAM_no_mkl(out_channel,out_width,out_height)
 
+        elif (kernel_size[0] == 1) != (kernel_size[1] == 1):
+            #Get the largest of the two kernels
+            kernel_high = max(kernel_size[0], kernel_size[1])
+
+            #First kernel_high times the input image
+            memory += kernel_high * in_channel * in_height * in_width
+
+            #Then once the output image
+            memory += RAM_no_mkl(out_channel, out_width, out_height)
         else:
-            return RAM_no_mkl(out_channel,out_width,out_height) * (math.prod(kernel_size) + 1)
+            memory += RAM_no_mkl(out_channel,out_width,out_height) * (math.prod(kernel_size) + 1)
+        
+    return memory
 
 
 
@@ -664,7 +686,7 @@ def get_RAM_realistic(in_channel, out_channel, kernel_size, image, method, strid
         Model_size = in_channel *  out_channel * math.prod(kernel_size)
 
         Filter_1 = RAM_choose_MKL_or_nativePT(in_channel,out_channel, kernel_size, stride, padding, dilation, image[0],image[1],image_out[0],image_out[1])
-        output = [Input_image, Model_size, sum(Filter_1)]     
+        output = [Input_image, Model_size, Filter_1]     
 
         if output_total == True:
             return sum(output)*bytes_per_float
@@ -673,7 +695,7 @@ def get_RAM_realistic(in_channel, out_channel, kernel_size, image, method, strid
             return output
         
 
-    if(method == "cp"):
+    elif(method == "cp"):
         Input_image = in_channel * math.prod(image)
         Model_size = sum([rank*in_channel, rank*kernel_size[0], rank*kernel_size[1],rank*out_channel])
 
@@ -685,9 +707,28 @@ def get_RAM_realistic(in_channel, out_channel, kernel_size, image, method, strid
         output = [Input_image, Model_size, Filter_1, Filter_2, Filter_3, Filter_4]
         output = [sum(i)  if (isinstance(i,list)) else i for i in output]
 
-        if output_total == True:
-            return sum(output)*bytes_per_float
-        else:
-            return [i*bytes_per_float for i in output]
+        
+        
+    elif(method == "tt"):
+        Input_image = in_channel * math.prod(image)
+        Model_size = sum([rank[1] * in_channel, rank[1] * kernel_size[1] * rank[2], rank[2] * kernel_size[1] * rank[3] , rank[3] * out_channel])
 
-    raise ValueError("Method must be uncomp or CP")
+        Filter_1 = RAM_choose_MKL_or_nativePT(in_channel, rank[1], (1,1), (1,1), (0,0), (1,1), image[0], image[1], image[0], image[1], True)
+        Filter_2 = RAM_choose_MKL_or_nativePT(rank[1], rank[2], (kernel_size[0],1), (padding[0], 0), (stride[0],1), (dilation[0],1), image[0], image[1], image_out[0], image[1], True)
+        Filter_3 = RAM_choose_MKL_or_nativePT(rank[2], rank[3], (1,kernel_size[1]), (0,padding[1]), (1,stride[0]), (1,dilation[0]), image_out[0], image[1], image_out[0], image_out[1], True)
+        Filter_4 = RAM_choose_MKL_or_nativePT(rank[3], out_channel, (1,1), (1,1), (0,0), (1,1), image_out[0], image_out[1], image_out[0], image_out[1], True)
+
+        output = [Input_image, Model_size, Filter_1, Filter_2, Filter_3, Filter_4]
+        output = [sum(i)  if (isinstance(i,list)) else i for i in output]
+
+    else:
+        raise ValueError("Method must be uncomp or CP")
+
+
+    if output_total == True:
+        return sum(output)*bytes_per_float
+    else:
+        return [i*bytes_per_float for i in output]
+
+
+    

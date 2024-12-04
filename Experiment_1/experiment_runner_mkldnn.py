@@ -145,7 +145,7 @@ def model_runner(model, epochs : int, image_size : int|tuple, device : str = 'cp
     output["Expected MAC"] = expected_MAC
     output["Expected MAC total"] = expected_MAC_total
     output["Expected RAM"] = model.MKL_RAM(image_size)
-    output["Expected RAM total"] = model.MKL_RAM(image_size,output_total=True)
+    output["Expected RAM total"] = sum(output.get("Expected RAM"))
 
     if output.get("model_type") == "cp":
         output["rank"]      = model_information.get("rank")

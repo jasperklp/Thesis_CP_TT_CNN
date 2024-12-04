@@ -11,12 +11,17 @@ import matplotlib.pyplot as plt
 
 def main():
     df_pytorch = False
-    if df_pytorch == True:
-        read_file  = "2024-11-12_10.49.10"
-        folder = "verify_model_matching_kernel_size_default_pytorch"
+    tt = True
+    if tt == True:
+        read_file  = "2024-12-04_16.13.43"
+        folder = "verify_model_matching_tt_kernel_size_default_pytorch"
     else:
-        read_file = "2024-11-29_14.58.56"
-        folder = "verify_model_matching_kernel_size"
+        if df_pytorch == True:
+            read_file  = "2024-11-12_10.49.10"
+            folder = "verify_model_matching_kernel_size_default_pytorch"
+        else:
+            read_file = "2024-11-29_14.58.56"
+            folder = "verify_model_matching_kernel_size"
 
     results, measurement_parameters, model_types = utils.preprocess_measurement_data(read_file,folder, "kernel_size", "in_channel")
 
@@ -111,7 +116,7 @@ def plot_image_size_expect_ratio(results, measurement_parameters, model_types):
         ax[i//2][i%2].set_xscale("log")
         ax[i//2][i%2].set_ylabel("Ratio")
         ax[i//2][i%2].set_xlabel("In_channels = out_channels = ")
-        # ax[i//2][i%2].set_ylim([0.5,1.1])
+        ax[i//2][i%2].set_ylim([0.5,1.1])
         ax[i//2][i%2].set_xticks(measurement_parameters.in_channel)
         ax[i//2][i%2].set_xticklabels(measurement_parameters.in_channel)
 

@@ -23,15 +23,15 @@ def main(measure_data, filename, routine = None):
     else:
         raise ValueError("Routine is not valid. See the main function for valid options or give no option for default routine")
 
-    logger.info(f"The measurement routine = {routine}")
+    
 
     #Acquire name for logger and data
     start_date, start_time = helper.get_date_time(True)
     data_folder = f"{os.getcwd()}\\data"
     experiment_name = filename
     event_name = f"{start_date}_{start_time}"
-    logging.basicConfig(filename=f"{data_folder}\\log\\{experiment_name}\\{event_name}.txt",level=logging.INFO)
-
+    logging.basicConfig(filename=f"{data_folder}\\log\\{experiment_name}\\{event_name}.txt",level=logging.INFO, force=True)
+    logger.info(f"The measurement routine = {routine}")
     #Try whether test data folder is available
     data_path = f"{data_folder}\\data\\{experiment_name}"
     if not os.path.exists(f"{data_path}"):
@@ -53,8 +53,8 @@ def main(measure_data, filename, routine = None):
         print("Uncomp", flush=True)
         measurement_outputs.append(runner.model_runner(CNN_models.uncomp_model(in_channels=in_channels,out_channels=out_channels,kernel_size=kernel_size,padding=padding,stride=stride),epochs,image_size,verbose = False)) 
         for i in rank:
-            print(f"CP with rank={i}",flush=True)
-            measurement_outputs.append(runner.model_runner(CNN_models.cp_tensorly_model(in_channels=in_channels,out_channels=out_channels,kernel_size=kernel_size,padding=padding,rank=i,stride=stride),epochs,image_size, verbose = False))
+            print(f"TT with rank={i}",flush=True)
+            measurement_outputs.append(runner.model_runner(CNN_models.tt_tensorly_model(in_channels=in_channels,out_channels=out_channels,kernel_size=kernel_size,padding=padding,rank=i,stride=stride),epochs,image_size, verbose = False))
 
 
 
