@@ -254,7 +254,10 @@ def MAC_estimation_2d(in_channel : int, out_channel : int, kernel_size: int | tu
     elif method == 'tucker':
         raise NotImplementedError
     elif method == 'tt':
-        raise NotImplementedError
+        filter_operations.append(rank[0] * in_channel * 1 * 1)
+        filter_operations.append(rank[1] * rank[0] * kernel_size[0] * 1)
+        filter_operations.append(rank[2] * rank[1] * 1 * kernel_size[1])
+        filter_operations.append(out_channel * rank[2] * 1 * 1)
     else:
         raise ValueError(f'Give a valid method\nValid methods are:\nuncomp, cp, tt, tucker')
     
