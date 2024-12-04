@@ -58,13 +58,13 @@ class uncomp_model(torch.nn.Module):
         return (self._in_channels, self._out_channels)
         
     def MAC_and_RAM(self, image,output_in_bytes = False, output_total = True):
-        return calc_expectation.MAC_and_ram_estimation_2d(self._in_channels, self._out_channels, self._kernel_size, image, 'uncomp', self._stride, self._padding, self._dilation, bits_per_element=torch.finfo(self._dtype).bits,output_in_bytes = output_in_bytes, output_total = output_total)
+        return calc_expectation.MAC_and_ram_estimation_2d(self._in_channels, self._out_channels, self._kernel_size, image, self.model_type, self._stride, self._padding, self._dilation, bits_per_element=torch.finfo(self._dtype).bits,output_in_bytes = output_in_bytes, output_total = output_total)
 
     def MKL_RAM(self,image,  output_total = False):
-        return calc_expectation.get_mkldnn_ram(self._in_channels, self._out_channels, self._kernel_size, image, 'uncomp', self._stride, self._padding, self._dilation, output_total=output_total,bytes_per_float=torch.finfo(self._dtype).bits/8)
+        return calc_expectation.get_mkldnn_ram(self._in_channels, self._out_channels, self._kernel_size, image, self.model_type, self._stride, self._padding, self._dilation, output_total=output_total,bytes_per_float=torch.finfo(self._dtype).bits/8)
 
     def DefaultPT_RAM(self, image, output_total = False):
-        return calc_expectation.get_RAM_realistic(self._in_channels, self._out_channels, self._kernel_size, image, "uncomp", self._stride, self._padding, self._dilation, None, output_total=output_total)
+        return calc_expectation.get_RAM_realistic(self._in_channels, self._out_channels, self._kernel_size, image, self.model_type, self._stride, self._padding, self._dilation, None, output_total=output_total)
 
     def forward(self,x):
         with record_function("Filter_image 1"):
@@ -137,18 +137,98 @@ class cp_tensorly_model(torch.nn.Module):
     
     def MKL_RAM(self,image,  output_total = False):
         if self._implementation == 'factorized':
-            return calc_expectation.get_mkldnn_ram(self._in_channels, self._out_channels, self._kernel_size, image, 'cp', self._stride, self._padding, self._dilation,rank=self._rank_int, output_total=output_total,bytes_per_float=torch.finfo(self._dtype).bits/8)
+            return calc_expectation.get_mkldnn_ram(self._in_channels, self._out_channels, self._kernel_size, image, self.model_type, self._stride, self._padding, self._dilation,rank=self._rank_int, output_total=output_total,bytes_per_float=torch.finfo(self._dtype).bits/8)
         else:
             NotImplementedError(r'For this implementation of the FactorizedConv, no MAC and RAM are worked out')
     
     def DefaultPT_RAM(self, image, output_total = False):
         if self._implementation == 'factorized':
-            return calc_expectation.get_RAM_realistic(self._in_channels, self._out_channels, self._kernel_size, image, 'cp', self._stride, self._padding, self._dilation,rank=self._rank_int, output_total=output_total,bytes_per_float=torch.finfo(self._dtype).bits/8)
+            return calc_expectation.get_RAM_realistic(self._in_channels, self._out_channels, self._kernel_size, image, self.model_type, self._stride, self._padding, self._dilation,rank=self._rank_int, output_total=output_total,bytes_per_float=torch.finfo(self._dtype).bits/8)
         else: 
             NotImplementedError('For this implementation of the FactorizedConv, no MAC and RAM are worked out')
     
     def forward(self, x):
         return self.encoder(x)
+    
+class tt_tensorly_model(torch.nn.Module):
+
+    def __init__(self,in_channels   :int
+                 , out_channels     :int
+                 , kernel_size      :int | tuple
+                 , rank             :int | float 
+                 , stride           :int | tuple        = 1
+                 , padding          :int | tuple |str   = 1
+                 , dilation         :int | tuple        = 1
+                 , groups           :int                = 1
+                 , bias             :bool               = True              
+                 , padding_mode     :str                = 'zeros'
+                 , device           :str                = None                   
+                 , dtype            :torch.dtype        = torch.float32
+                 , implementation   :str                = 'factorized'):
+        super().__init__()
+
+        if isinstance(rank, float):
+            kernel = calc_expectation.check_int_or_tuple_of_int(kernel_size)
+            rank_int = tensorly.validate_tt_rank((in_channels, kernel[0], kernel[1], out_channels),rank=rank)
+        else:
+            rank_int = rank
+
+        self._in_channels    = in_channels
+        self._out_channels   = out_channels
+        self._kernel_size    = kernel_size
+        self._rank           = rank
+        self._rank_int       = rank_int
+        self._implementation = implementation
+        self._stride         = stride
+        self._padding        = padding
+        self._dilation       = dilation
+        self._bias           = bias
+        self._padding_mode   = padding_mode
+        self._dtype          = dtype
+        self.name            = "TT_Tensorly"
+        self.model_type      = "tt"
+
+        self.encoder = tltorch.FactorizedConv.from_conv(torch.nn.Conv2d(in_channels,out_channels,kernel_size,stride,padding,dilation,groups,bias,padding_mode,device,dtype)
+                                                    ,rank
+                                                    ,implementation = implementation
+                                                    ,factorization= 'tt'
+                                                    ,decompose_weights=False)
+        
+    def get_output_data(self):
+        return {"in_channels"   : self._in_channels,
+                "out_channels"  : self._out_channels,
+                "kernel_size"   : calc_expectation.check_int_or_tuple_of_int(self._kernel_size),
+                "stride"        : calc_expectation.check_int_or_tuple_of_int(self._stride),
+                "padding"       : calc_expectation.check_int_or_tuple_of_int(self._padding),
+                "dtype"         : self._dtype,
+                "rank"          : self._rank,
+                "rank_int"      : self._rank_int
+                }
+    
+    def MAC_and_RAM(self, image,output_in_bytes = False, output_total = True):
+        if self._implementation == 'factorized':
+            method = "tt"
+        else:
+            raise NotImplementedError
+        
+        return calc_expectation.MAC_and_ram_estimation_2d(self._in_channels, self._out_channels, self._kernel_size, image, method, self._stride, self._padding, self._dilation, bits_per_element=torch.finfo(self._dtype).bits,rank=self._rank,output_in_bytes = output_in_bytes, output_total = output_total)
+
+    
+    def MKL_RAM(self,image,  output_total = False):
+        if self._implementation == 'factorized':
+            return calc_expectation.get_mkldnn_ram(self._in_channels, self._out_channels, self._kernel_size, image, self.model_type, self._stride, self._padding, self._dilation,rank=self._rank_int, output_total=output_total,bytes_per_float=torch.finfo(self._dtype).bits/8)
+        else:
+            NotImplementedError('For this implementation of the FactorizedConv, no MAC and RAM are worked out')
+    
+    def DefaultPT_RAM(self, image, output_total = False):
+        if self._implementation == 'factorized':
+            return calc_expectation.get_RAM_realistic(self._in_channels, self._out_channels, self._kernel_size, image, self.model_type, self._stride, self._padding, self._dilation,rank=self._rank_int, output_total=output_total,bytes_per_float=torch.finfo(self._dtype).bits/8)
+        else: 
+            NotImplementedError('For this implementation of the FactorizedConv, no MAC and RAM are worked out')
+
+    def forward(self, x):
+        return self.encoder(x)
+
     
 class cp_GIL_model(torch.nn.Module):
     def __init__(self,in_channels   :int
