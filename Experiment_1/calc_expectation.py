@@ -202,7 +202,7 @@ def ram_estimation_2d(in_channel : int, out_channel : int, kernel_size : int | t
         # print(rank)
         filter_storage_size.append(image[0] * image[1] * rank[1])
         filter_storage_size.append(image_out[0] * image[1] * rank[2])
-        filter_storage_size.append(image_out[1] * image_out[1] * rank[3])
+        filter_storage_size.append(image_out[0] * image_out[1] * rank[3])
 
 
 
@@ -246,7 +246,6 @@ def MAC_estimation_2d(in_channel : int, out_channel : int, kernel_size: int | tu
     #Calculate the output image as it will always have the same shape
     image_out = calc_output_image_dim(kernel_size,stride, padding, dilation, image)
     filter_operations = []
-    filter_operations = []
 
     #Based on the input method calculate the number of MACs required.
     if method == 'uncomp':
@@ -261,10 +260,11 @@ def MAC_estimation_2d(in_channel : int, out_channel : int, kernel_size: int | tu
     elif method == 'tucker':
         raise NotImplementedError
     elif method == 'tt':
-        filter_operations.append(rank[0] * in_channel * 1 * 1)
-        filter_operations.append(rank[1] * rank[0] * kernel_size[0] * 1)
-        filter_operations.append(rank[2] * rank[1] * 1 * kernel_size[1])
-        filter_operations.append(out_channel * rank[2] * 1 * 1)
+        print(image_out)
+        filter_operations.append(rank[1] * in_channel * image[0] * image[1])
+        filter_operations.append(rank[2] * rank[1] * kernel_size[0] * image_out[0] * image[1])
+        filter_operations.append(rank[3] * rank[2] * 1 * kernel_size[1] * image_out[0] * image_out[1])
+        filter_operations.append(out_channel * rank[3] * image_out[0] * image_out[1])
     else:
         raise ValueError(f'Give a valid method\nValid methods are:\nuncomp, cp, tt, tucker')
     

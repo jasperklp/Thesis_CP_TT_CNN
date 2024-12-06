@@ -54,6 +54,16 @@ def test_cp_dif_input_output_image_size():
 def test_cp_no_square_kernel():
     assert calc_expectation.ram_estimation_2d(10,20,(3,5),(30,40), 'cp' , 1,1,1,rank = 5) == 52390 * 32
     
+#Test outcomes memory TT
+def test_tt_same_input_output_image_size():
+    assert calc_expectation.ram_estimation_2d(10,20,3,(30,40), 'tt', 1,1,1,rank = (1,5,6,7,1)) == 1856192 # nr of elements times number of bits.
+
+def test_tt_dif_input_output_image_size():
+    assert calc_expectation.ram_estimation_2d(10,20,5,(30,40), 'tt', 1,1,1,rank = (1,5,6,7,1)) == 1727936
+
+def test_tt_no_square_kernel():
+    assert calc_expectation.ram_estimation_2d(10,20,(3,5),(30,40), 'tt' , 1,1,1,rank = (1,5,6,7,1)) == 1807040
+
 
 # Test outcomes MAC 
 def test_MAC_uncomp_same_input_output_image_size():
@@ -73,6 +83,14 @@ def test_MAC_cp_diff_input_output_image_size():
 def test_MAC_cp_non_square_kernel():
     assert calc_expectation.MAC_estimation_2d(10,20,(3,5),(30,40), 'cp' , 1,1,1,rank = 5) == 219600
 
+# Test outcomes MAC TT
+def test_MAC_TT_same_input_output_image_size():
+    assert calc_expectation.MAC_estimation_2d(10,20,3,(30,40), 'tt', 1, 1, 1,rank = (1,5,6,7,1)) == 487200
+def test_MAC_TT_diff_input_output_image_size():
+    assert calc_expectation.MAC_estimation_2d(10,20,5,(30,40), 'tt', 1,1,1,rank = (1,5,6,7,1)) == 600400
+def test_MAC_TT_non_square_kernel():
+    assert calc_expectation.MAC_estimation_2d(10,20,(3,5),(30,40), 'tt' , 1,1,1, (1,5,6,7,1)) == 567000
+
 #Test outcomes RAM split uncomp
 def test_RAM_split_uncomp():
     assert calc_expectation.ram_estimation_2d(10,20,3,(30,40),'uncomp',1,1,1,output_total=False) == [384000,[57600],[0], 768000]
@@ -80,6 +98,8 @@ def test_RAM_split_uncomp():
 def test_RAM_split_cp():
     assert calc_expectation.ram_estimation_2d(10,20,3,(30,40),'cp',1,1,1,rank=5,output_total=False) == [12000*32,[50*32,15*32,15*32,100*32],[6000*32,6000*32,6000*32], 24000*32]
 
+def test_RAM_split_tt():
+    assert calc_expectation.ram_estimation_2d(10,20,3,(30,40),'tt',1,1,1,rank=(1,5,6,7,1),output_total=False) == [384000, [1600, 2880, 4032, 4480], [192000, 230400, 268800], 768000]
 
 #Test outcomes RAM bytes
 def test_RAM_in_bytes_together_uncomp():
@@ -96,9 +116,15 @@ def test_RAM_in_bytes_split_uncomp():
 
 def test_RAM_in_bytes_split_cp():
     cp_bytes = calc_expectation.ram_estimation_2d(10,20,3,(30,40),'cp',1,1,1,rank=5,output_in_bytes=True,output_total=False)
-    cp_bits = calc_expectation.ram_estimation_2d(10,20,3,(30,40),'cp',1,1,1,rank=5,output_total=False)
+    cp_bits =  calc_expectation.ram_estimation_2d(10,20,3,(30,40),'cp',1,1,1,rank=5,output_total=False)
 
     assert cp_bytes == [i / 8 if type(i) == int else [j/8 for j in i] for i in cp_bits ]
+
+def test_RAM_in_bytes_split_tt():
+    tt_bytes = calc_expectation.ram_estimation_2d(10,20,3,(30,40),'tt',1,1,1, rank=(1,5,6,7,1),output_in_bytes=True,output_total=False)
+    tt_bits =  calc_expectation.ram_estimation_2d(10,20,3,(30,40),'tt',1,1,1,rank=(1,5,6,7,1),output_total=False)
+
+    assert tt_bytes == [i / 8 if type(i) == int else [j/8 for j in i] for i in tt_bits]
 
 #Test other outcomes MAC
 def test_MAC_splittotal_cp():
@@ -110,11 +136,21 @@ def test_MAC_split_cp():
     cp_MAC_split = calc_expectation.MAC_estimation_2d(10,20,3,(30,40), 'cp', 1,1,1,rank = 5, output_total=False)
     assert cp_MAC_split == [10*5*30*40, 3*5*30*40,3*5*30*40,20*5*30*40]
 
+def test_MAC_split_tt():
+    tt_MAC_split = calc_expectation.MAC_estimation_2d(10,20,3,(30,40), 'tt', 1,1,1,rank = (1,5,6,7,1), output_total=False)
+    tt_MAC_total = calc_expectation.MAC_estimation_2d(10,20,3,(30,40), 'tt', 1,1,1,rank = (1,5,6,7,1))
+    assert tt_MAC_total == sum(tt_MAC_split)
+
 #Test combination
 def test_MACRAM_uncomp_dif_no_square_kernel_input_output_image():
     assert calc_expectation.MAC_and_ram_estimation_2d(10,20,(3,7), (30,40), 'uncomp', 1, 2, 3) == [calc_expectation.MAC_estimation_2d(10,20,(3,7), (30,40), 'uncomp', 1, 2, 3), calc_expectation.ram_estimation_2d(10,20,(3,7), (30,40), 'uncomp', 1, 2, 3)]
 
-def test_MACRAM_uncomp_dif_no_square_kernel_input_output_image():
+def test_MACRAM_cp_dif_no_square_kernel_input_output_image():
     assert calc_expectation.MAC_and_ram_estimation_2d(10,20,(3,7), (30,40), 'cp', 1, 2, 3, rank=5,output_in_bytes=True, output_total=False) == [calc_expectation.MAC_estimation_2d(10,20,(3,7), (30,40),  'cp', 1, 2, 3, rank=5, output_total=False), calc_expectation.ram_estimation_2d(10,20,(3,7), (30,40), 'cp', 1, 2, 3, rank=5,output_in_bytes=True, output_total=False)]
 
+def test_MACRAM_tt_dif_no_square_kernel_input_output_image():
+    RAM = calc_expectation.ram_estimation_2d(10,20,(3,7), (30,40), 'tt', 1, 2, 3, rank=(1,5,6,7,1),output_in_bytes=True, output_total=False)
+    MAC = calc_expectation.MAC_estimation_2d(10,20,(3,7), (30,40),  'tt', 1, 2, 3, rank=(1,5,6,7,1), output_total=False)
+    MAC_and_RAM = calc_expectation.MAC_and_ram_estimation_2d(10,20,(3,7), (30,40), 'tt', 1, 2, 3, rank=(1,5,6,7,1),output_in_bytes=True, output_total=False)
 
+    assert MAC_and_RAM == [MAC, RAM]
