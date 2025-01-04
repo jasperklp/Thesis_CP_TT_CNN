@@ -165,3 +165,121 @@ def preprocess_measurement_data(read_file, folder, measurement_variable, measure
             results[1,first_index,second_index,third_index] = dif_parameter_result["Expected RAM total"]
 
     return (results, measurement_parameters, model_types)
+
+
+def check_to_list(measurement_variable, measurement_range):
+    if measurement_variable in {"image_size", "kernel_size", "padding", "stride", "dilation"}:
+        return [[i, i] if not isinstance(i,list) else i for i in measurement_range ]
+    else:
+        return measurement_range
+
+
+def get_model_types(data, filter_ranks = None, filter_models = None) : 
+    """
+        Gets the different model types form a JSON file
+
+        Args:
+            data    :   data from a JSON file
+        Returns:
+            model_types : List of "uncomp" or "decomposition + rank"
+
+    """
+
+    # Get measurement dictionary
+    measurement_parameters = measurement.from_dict(data["Setup_data"])
+
+    #If no ranks are given, all ranks that are in the measurement data are valid.
+    if filter_ranks is None:
+        used_ranks = measurement_parameters.rank
+    #Else only the ranks that are in the input and in the measurement data
+    else:
+        used_ranks = list(set(measurement_parameters.rank) & set(filter_ranks))
+
+    #Same for models
+    if filter_models is None:
+        used_models = measurement_parameters.models
+    else:
+        used_models = list(set(measurement_parameters.models) & set(filter_models))
+
+    
+    print(measurement_parameters.models)
+    #Determine number of different measurements
+    nr_of_models = len(used_ranks) * len(used_models) 
+    model_types = [f"{model} {rank}" for rank in used_ranks for model in used_models if model not in "uncomp"]
+    if "uncomp" in used_models:
+        nr_of_models = nr_of_models - len(used_ranks) + 1
+        model_types = ["uncomp"] + model_types
+        
+    return model_types
+
+
+
+def preprocess_time_data(read_file, folder, measurement_variable = None, measurement_variable2 = None, iterator_routine = None, used_ranks = None, used_models = None):
+    """"
+        Processes measurment data
+
+        Processes measurment data in a numpy format. It accepts multiple decomposed types.
+
+        Args:
+
+
+        Returns:
+            results     :   3(4)-D Numpy array conatining all results (datanr , modelnr, first indexnr (,2nd index nr))
+                                datanr (1 : Inference duration, 2: Total allocated RAM, 3: Expected MAC total)
+
+            model_types : An array with model types
+    """
+
+    with open(f"{os.getcwd()}\\data\\data\\{folder}\\{read_file}.json") as json_file:
+        data = json.load(json_file)
+
+
+    model_types = get_model_types(data, used_ranks, used_models) 
+    
+    measurement_parameters = measurement.from_dict(data["Setup_data"])
+
+    #Determine number of total tests
+    nr_of_tests = measurement_parameters.amount_of_measurements(iterator_routine)
+
+    #Determine the measurment variables
+    measurement_range = getattr(measurement_parameters, measurement_variable)
+    measurement_range = check_to_list(measurement_variable, measurement_range)
+    if measurement_variable2 is not None:
+        measurement_range2 = getattr(measurement_parameters,measurement_variable2)
+        measurement_range2 = check_to_list(measurement_variable2, measurement_range2)
+    print(measurement_range)
+    
+    if measurement_variable2 is None:
+        results = np.zeros((3, nr_of_models, len(measurement_range)))
+    else:
+        results = np.zeros((3, nr_of_models, len(measurement_range), len(measurement_range2)))
+
+    for test in data["outcomes"]:
+        # Exception is used when a setup is in data, but will not be in plot.
+        try:
+            try:
+                modelnr = model_types.index(f"{test["model_type"]} {test["rank"]}")
+            except KeyError:
+                modelnr = model_types.index(f"{test["model_type"]}")
+        except ValueError:
+            continue
+
+        if measurement_variable2 is None:
+            results[0, modelnr, measurement_range.index(test[f"{measurement_variable}"])] = statistics.mean(test["Inference duration"])
+            results[1, modelnr, measurement_range.index(test[f"{measurement_variable}"])] = test["measurements"][0]["Total allocated RAM"]
+            results[2, modelnr, measurement_range.index(test[f"{measurement_variable}"])] = test["Expected MAC Total"]
+        elif measurement_variable2 is not None:
+            results[0, modelnr, measurement_range.index(test[f"{measurement_variable}"]), measurement_range2.index(test[f"{measurement_variable2}"])] = statistics.mean(test["Inference duration"])
+            results[1, modelnr, measurement_range.index(test[f"{measurement_variable}"]), measurement_range2.index(test[f"{measurement_variable2}"])] = test["measurements"][0]["Total allocated RAM"]
+            results[2, modelnr, measurement_range.index(test[f"{measurement_variable}"]), measurement_range2.index(test[f"{measurement_variable2}"])] = test["Expected MAC total"]
+
+    return results, model_types
+
+        
+
+
+
+
+
+
+    

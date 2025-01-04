@@ -18,7 +18,7 @@ logger = logging.getLogger(__name__)
 
 
 
-def model_runner(model, epochs : int, image_size : int|tuple, device : str = 'cpu', verbose : bool = False):
+def model_runner(model, epochs : int, image_size : int|tuple, device : str = 'cpu', verbose : bool = False, mkl_verbose : bool = False, save_mem_first_only : bool = False):
     [start_date,start_time] = f"{datetime.datetime.now()}".split()
     start_time = start_time.replace(":",".")
     
@@ -59,7 +59,7 @@ def model_runner(model, epochs : int, image_size : int|tuple, device : str = 'cp
         raise TypeError("Device type is not a string")
     else:  
         torch.device(device)
-    total_time = 0
+    wall_time = []
 
     #Ensure the code is reproducible
     if torch.backends.cudnn.is_available():
@@ -75,39 +75,46 @@ def model_runner(model, epochs : int, image_size : int|tuple, device : str = 'cp
     if verbose == True:
         print("Start experiment")
 
+    
+
     measurements = []
     with torch.no_grad():
-        with torch.backends.mkldnn.verbose(torch.backends.mkldnn.VERBOSE_ON):
+       
             for i in range(epochs):
-                with profile(activities=[ProfilerActivity.CPU], 
-                    profile_memory=True,
-                    record_shapes=False, 
-                    with_stack=False,
-                    with_modules=False
-                    ) as prof:
-                    chosen_seed = 100 + i 
-                    torch.manual_seed(chosen_seed)
-                    random.seed(chosen_seed)
-                    np.random.seed(chosen_seed)
-                    
-                    with record_function("Input_image"):
-                        input = torch.randn(1,in_channels, image_size[0], image_size[1],dtype=torch.float32)
-                    with record_function("model_size"):
-                        model_test = copy.deepcopy(model)
-                    
-                    start = time.time()
-                    output = model_test(input)
-                    end =   time.time()
+                if (mkl_verbose == "true") or ((mkl_verbose == "one") and (i == 1)):
+                    mkl_verbosity = torch.backends.mkldnn.VERBOSE_ON
+                else:
+                    mkl_verbosity = torch.backends.mkldnn.VERBOSE_OFF
+                with torch.backends.mkldnn.verbose(mkl_verbosity):
+                    with profile(activities=[ProfilerActivity.CPU], 
+                        profile_memory=True,
+                        record_shapes=False, 
+                        with_stack=False,
+                        with_modules=False
+                        ) as prof:
+                        chosen_seed = 100 + i 
+                        torch.manual_seed(chosen_seed)
+                        random.seed(chosen_seed)
+                        np.random.seed(chosen_seed)
+                        
+                        with record_function("Input_image"):
+                            input = torch.randn(1,in_channels, image_size[0], image_size[1],dtype=torch.float32)
+                        with record_function("model_size"):
+                            model_test = copy.deepcopy(model)
+                        
+                        start = time.perf_counter()
+                        with record_function("Model"):
+                            output = model_test(input)
+                        end =   time.perf_counter()
 
-                    wall_time = end - start
+                        wall_time.append(end - start)
 
-                    total_time += wall_time
-                    del input
-                    del model_test
-                    del output
+                        del input
+                        del model_test
+                        del output
 
-                if verbose == True:
-                    print(prof.key_averages().table(sort_by="cpu_memory_usage"))
+                    if verbose == True:
+                        print(prof.key_averages().table(sort_by="cpu_memory_usage"))
                 
         
         
@@ -135,7 +142,7 @@ def model_runner(model, epochs : int, image_size : int|tuple, device : str = 'cp
         "measurement_start_time"    : [start_date, start_time],
         "measurement_end_time"   	: [end_date, end_time],
 
-        "Inference duration"    : total_time,
+        "Inference duration"    : wall_time,
         "nr of measurements"    : epochs,
         "measurements"          : []
     }
@@ -152,22 +159,29 @@ def model_runner(model, epochs : int, image_size : int|tuple, device : str = 'cp
         output["rank"]      = model_information.get("rank")
         output["rank_int"]  = model_information.get("rank_int")
     
-    for tracefile in measurements:
-        measurement = {}
-        json_file = open(tracefile)
-        data = json.load(json_file)
-        events = data["traceEvents"]
-        (measurement["Peak allocated RAM"],measurement["Total allocated RAM"]) = helper.get_peak_and_total_alloc_memory(events, verbose=verbose)
-        measurement["Filter per model"] = helper.json_get_memory_changes_per_model_ref(data, verbose=verbose)
-        measurement["Filter_per_model_total_mem"] = helper.get_total_mem_per_filter(measurement["Filter per model"], verbose = verbose)
-        json_file.close()
-        output["measurements"].append(measurement)
+    if save_mem_first_only == True:
+        output["measurements_process_model"] = "single"
+        output["measurements"].append(process_measurement(measurements[0]))
+    else:
+        output["measurements_process_model"] = "all"
+        for tracefile in measurements:
+            output["measurements"].append(process_measurement(tracefile, verbose))
 
 
     clock_date, clock_time = helper.get_date_time()
     logger.info(f"Ended model at {clock_date} {clock_time}")
     return (output)
 
+def process_measurement(tracefile, verbose: bool = False): 
+    measurement = {}
+    json_file = open(tracefile)
+    data = json.load(json_file)
+    events = data["traceEvents"]
+    (measurement["Peak allocated RAM"],measurement["Total allocated RAM"]) = helper.get_peak_and_total_alloc_memory(events, verbose=verbose)
+    measurement["Filter per model"] = helper.json_get_memory_changes_per_model_ref(data, verbose=verbose)
+    measurement["Filter_per_model_total_mem"] = helper.get_total_mem_per_filter(measurement["Filter per model"], verbose = verbose)
+    json_file.close()
+    return measurement
 
 
 

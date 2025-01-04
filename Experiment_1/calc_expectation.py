@@ -260,7 +260,7 @@ def MAC_estimation_2d(in_channel : int, out_channel : int, kernel_size: int | tu
     elif method == 'tucker':
         raise NotImplementedError
     elif method == 'tt':
-        print(image_out)
+        # print(image_out)
         filter_operations.append(rank[1] * in_channel * image[0] * image[1])
         filter_operations.append(rank[2] * rank[1] * kernel_size[0] * image_out[0] * image[1])
         filter_operations.append(rank[3] * rank[2] * 1 * kernel_size[1] * image_out[0] * image_out[1])

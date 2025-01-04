@@ -27,7 +27,7 @@ def main():
 
     # plot_image_size_data(results, measurement_parameters, model_types)
     # plot_image_size_data_ratio(results, measurement_parameters, model_types)
-    plot_image_size_expect_ratio(results, measurement_parameters, model_types)
+    plot_image_size_expect_ratio(results, measurement_parameters, model_types, tt = tt)
 
 
 #Create figure
@@ -56,8 +56,6 @@ def plot_image_size_data(results, measurement_parameters, model_types):
    
 
     plt.suptitle("Memory for different image_sizes and in_channel sizes")
-    
-    
     plt.legend(model_types, loc = 'lower left', bbox_to_anchor = (1.05,1.05),borderaxespad=0.)
     plt.tight_layout(rect=[0,0,0.9,1])
     fig.subplots_adjust(hspace=0.5, right=0.8)
@@ -99,7 +97,7 @@ def plot_image_size_data_ratio(results, measurement_parameters, model_types):
     fig.subplots_adjust(hspace=0.5, right=0.8)
     plt.show()
 
-def plot_image_size_expect_ratio(results, measurement_parameters, model_types):
+def plot_image_size_expect_ratio(results, measurement_parameters, model_types, tt : bool = False):
     fig,ax = plt.subplots(2,2)
     # ax = ax[0]
     print(results.shape)
@@ -124,7 +122,9 @@ def plot_image_size_expect_ratio(results, measurement_parameters, model_types):
 
 
     plt.suptitle("Memory for different image_sizes and in_channel sizes")
-    
+    print(model_types)
+    if tt == True:
+        model_types = [f"tt {model_type}" if model_type != "uncomp" else "uncomp" for model_type in model_types]
     
     plt.legend(model_types, loc = 'lower left', bbox_to_anchor = (1.05,1.05),borderaxespad=0.)
     plt.tight_layout(rect=[0,0,0.9,1])

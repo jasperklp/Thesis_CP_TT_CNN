@@ -19,9 +19,7 @@ class measurement:
     padding     : int|tuple | list      = 1
     stride      : int|tuple | list      = 1
     dilation    : int|tuple | list      = 1 
-    
-    #Input image data
-    image_size  : int|tuple | list
+    models      : list                  = None
     
     #Nr of epochs
     epochs      : int                   = 1
@@ -36,6 +34,8 @@ class measurement:
         self.padding        = to_list(self.padding)
         self.stride         = to_list(self.stride)
         self.dilation       = to_list(self.dilation)
+        if self.models is None:
+            self.models = ["uncomp", "tt", "cp"] 
 
 
         #Check if padding and the kernel size have approximately the same shape as they go together
@@ -56,7 +56,13 @@ class measurement:
         Raises:
             ValueError  : If the iterator does not exist.
         """
-        func_name = func.__name__
+        if func is None:
+            func_name = "__iter__"
+
+        elif func in {"iter_same_in_out", "iter_same_in_out_same_kernel_pad"}:
+            func_name = func
+        else:
+            func_name = func.__name__
 
         if func_name == "__iter__":
             to_be_measured = [self.in_channel, self.out_channel, self.kernel_size, self.padding, self.stride, self.dilation, self.image_size]
@@ -78,7 +84,7 @@ class measurement:
                             for dilation in self.dilation:
                                 for image_size in self.image_size:
                                     #print(in_channel, out_channel, kernel_size, stride, padding, dilation, image_size,self.rank,self.epochs)
-                                    yield (in_channel, out_channel, kernel_size, stride, padding, dilation, image_size,self.rank,self.epochs)
+                                    yield (in_channel, out_channel, kernel_size, stride, padding, dilation, image_size,self.rank,self.epochs, self.models)
 
     def iter_same_in_out(self):
         if (len(self.in_channel) != len(self.out_channel)):
@@ -91,7 +97,7 @@ class measurement:
                             for dilation in self.dilation:
                                 for image_size in self.image_size:
                                     #print(in_channel, out_channel, kernel_size, stride, padding, dilation, image_size,self.rank,self.epochs)
-                                    yield (in_channel, out_channel, kernel_size, stride, padding, dilation, image_size,self.rank,self.epochs)
+                                    yield (in_channel, out_channel, kernel_size, stride, padding, dilation, image_size,self.rank,self.epochs, self.models)
 
     def iter_same_in_out_same_kernel_pad(self):
         if (len(self.in_channel) != len(self.out_channel)):
@@ -107,7 +113,7 @@ class measurement:
                     for dilation in self.dilation:
                         for image_size in self.image_size:
                             # print(in_channel, out_channel, kernel_size, stride, padding, dilation, image_size,self.rank,self.epochs)
-                            yield (in_channel, out_channel, kernel_size, stride, padding, dilation, image_size,self.rank,self.epochs)
+                            yield (in_channel, out_channel, kernel_size, stride, padding, dilation, image_size,self.rank,self.epochs, self.models)
 
 
     def as_dict(self):
@@ -124,8 +130,8 @@ class measurement:
         stride         = dictionary.get("stride")
         dilation       = dictionary.get("dilation")
         epochs         = dictionary.get("epochs")
-
-        return cls(in_channel,out_channel,kernel_size,image_size,rank,padding,stride,dilation,epochs)
+        models         = dictionary.get("models")
+        return cls(in_channel,out_channel,kernel_size,image_size,rank,padding,stride,dilation,models,epochs)
     
 
 
@@ -271,7 +277,7 @@ def get_function_call_for_mem_ref(events):
                 dif_opt = dif
                 j["Operation name"] = i
         if (dif_opt == -1):
-            warnings.warn("There are memory events without an assigned cpu operation")
+            #warnings.warn("There are memory events without an assigned cpu operation")
             all_memory_events_are_good = False
         
     # if all_memory_events_are_good == False:
