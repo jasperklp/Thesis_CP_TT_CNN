@@ -2,6 +2,7 @@ import statistics
 import json
 import os
 import numpy as np
+import pandas as pd
 import sys
 
 #Adds root of thesis folder to sys path.
@@ -268,13 +269,73 @@ def preprocess_time_data(read_file, folder, measurement_variable = None, measure
         if measurement_variable2 is None:
             results[0, modelnr, measurement_range.index(test[f"{measurement_variable}"])] = statistics.mean(test["Inference duration"])
             results[1, modelnr, measurement_range.index(test[f"{measurement_variable}"])] = test["measurements"][0]["Total allocated RAM"]
-            results[2, modelnr, measurement_range.index(test[f"{measurement_variable}"])] = test["Expected MAC Total"]
+            results[2, modelnr, measurement_range.index(test[f"{measurement_variable}"])] = test["Expected MAC total"]
         elif measurement_variable2 is not None:
             results[0, modelnr, measurement_range.index(test[f"{measurement_variable}"]), measurement_range2.index(test[f"{measurement_variable2}"])] = statistics.mean(test["Inference duration"])
             results[1, modelnr, measurement_range.index(test[f"{measurement_variable}"]), measurement_range2.index(test[f"{measurement_variable2}"])] = test["measurements"][0]["Total allocated RAM"]
             results[2, modelnr, measurement_range.index(test[f"{measurement_variable}"]), measurement_range2.index(test[f"{measurement_variable2}"])] = test["Expected MAC total"]
 
     return results, model_types
+
+def get_pandas_infernce_memory_pairs(data, used_ranks = None, used_models = None):
+    """
+        Makes a pandas frame for all memory time pairs
+    """
+
+    headers = { 
+         "model"    : [],
+         "memory"   : [],
+         "MAC"      : [],
+         "duration" : [] 
+    }
+
+    df = pd.DataFrame(headers)
+
+    model_types = get_model_types(data, used_ranks, used_models)
+
+    measurement_parameters = measurement.from_dict(data["Setup_data"])
+    iterator_routine = None
+    nr_of_tests = measurement_parameters.amount_of_measurements(iterator_routine)
+    print(nr_of_tests)
+    print(len(data["outcomes"]))
+    i = 0
+    for test in data["outcomes"]:
+        i += 1
+        #If the model is not in the filtered list continue
+        try:
+            try:
+                modelnr = model_types.index(f"{test["model_type"]} {test["rank"]}")
+            except KeyError:
+                modelnr = model_types.index(f"{test["model_type"]}")
+        except ValueError:
+            continue
+    
+        duration = test["Inference duration"]
+        MAC_exp = test["Expected MAC total"]
+        memory = test["Expected RAM total"]
+
+        # print(len(duration))
+        for dur in [duration[0]]:
+            data = {
+                "model"    : model_types[modelnr],
+                "memory"   : memory,
+                "MAC"      : MAC_exp,
+                "duration" : dur 
+            }
+          
+            df = pd.concat([df, pd.DataFrame([data])], ignore_index=True)
+            #print(df)
+
+    print(i)
+
+    return df
+
+            
+        
+
+
+
+
 
         
 
