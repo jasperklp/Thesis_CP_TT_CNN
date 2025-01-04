@@ -235,6 +235,7 @@ def preprocess_time_data(read_file, folder, measurement_variable = None, measure
 
 
     model_types = get_model_types(data, used_ranks, used_models) 
+    nr_of_models = len(model_types)
     
     measurement_parameters = measurement.from_dict(data["Setup_data"])
 
