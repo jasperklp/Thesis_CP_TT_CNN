@@ -315,16 +315,16 @@ def get_pandas_infernce_memory_pairs(data, used_ranks = None, used_models = None
         memory = test["Expected RAM total"]
 
         # print(len(duration))
-        for dur in [duration[0]]:
-            data = {
-                "model"    : model_types[modelnr],
-                "memory"   : memory,
-                "MAC"      : MAC_exp,
-                "duration" : dur 
-            }
-          
-            df = pd.concat([df, pd.DataFrame([data])], ignore_index=True)
-            #print(df)
+
+        data = {
+            "model"    : model_types[modelnr],
+            "memory"   : memory,
+            "MAC"      : MAC_exp,
+            "duration" : statistics.median(duration)
+        }
+        
+        df = pd.concat([df, pd.DataFrame([data])], ignore_index=True)
+        #print(df)
 
     print(i)
 

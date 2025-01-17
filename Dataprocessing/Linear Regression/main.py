@@ -34,7 +34,8 @@ def main():
     output = df[["duration"]]
 
     print("TT/CP degree 1")
-    polynomial_fit(input, output, 1)
+    _,_,_, output_test, output_pred_test = polynomial_fit(input, output, 1)
+    plot_predicted_vs_actual(output_test, output_pred_test, "TT/CP CNN mem + ops degree 1")
 
     print("TT/CP degree 2")
     _,_,_, output_test, output_pred_test = polynomial_fit(input, output, 2)
@@ -47,7 +48,8 @@ def main():
     output = df[["duration"]]
 
     print("Uncomp degree 1")
-    polynomial_fit(input, output, 1)
+    _,_,_, output_test, output_pred_test = polynomial_fit(input, output, 1)
+    plot_predicted_vs_actual(output_test, output_pred_test, "Regular CNN mem + ops degree 1")
 
     print("Uncomp degree 2")
     polynomial_fit(input, output, 2)
@@ -58,7 +60,7 @@ def main():
     print(fit.coef_)
     print(fit.intercept_)
 
-    plot_predicted_vs_actual(output_test, output_pred_test, "MAC 1 degree")
+    
 
 
 
@@ -81,7 +83,7 @@ def polynomial_fit(input, output, polynomial_degree):
     evaluatortrain = RegressionMetric(output_train.to_numpy(), output_pred_train,  X_shape = input_train.shape)
     evaluatortest = RegressionMetric(output_test.to_numpy(), output_pred_test, X_shape = input_train.shape)
 
-    print("Evaluator on real data")
+    print("Evaluator on train data")
     print(evaluatortrain.RMSE())
     print(evaluatortrain.VAF())
     print(evaluatortrain.R2())
