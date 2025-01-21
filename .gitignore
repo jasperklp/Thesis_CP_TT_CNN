@@ -164,5 +164,9 @@ cython_debug/
 data/
 
 **/*.json
+**/*.xlsx
 
-Dataprocessing/Experiment test/files/
+
+
+Dataprocessing/Experiment 1/files/
+Dataprocessing/Experiment test/
