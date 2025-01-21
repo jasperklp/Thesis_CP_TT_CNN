@@ -98,7 +98,9 @@ def run_example(T, S, W, H, d1, d2, padding, stride, dilation, compression_ratio
 
     print("All CNN's")
     print(f"{input_image =}")
-    print(f"{output_image =}\n")
+    print(f"{output_image =}")
+    print(f"Sum input and output image = {input_image + output_image}\n")
+
 
     
     print("Regular CNN")
