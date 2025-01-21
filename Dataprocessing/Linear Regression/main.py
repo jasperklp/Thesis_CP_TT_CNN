@@ -40,8 +40,12 @@ def main():
     print("TT/CP degree 2")
     _,_,_, output_test, output_pred_test = polynomial_fit(input, output, 2)
 
+    print("TT/CP degree 1 MAC only")
+    polynomial_fit(df[["MAC"]], output, 1)
+
     print("TT/CP degree 1 memonly")
     polynomial_fit(df[["memory"]], output, 1)
+    
 
     df = utils.get_pandas_infernce_memory_pairs(data, used_models=["uncomp"])
     input = df[["memory", "MAC"]]
@@ -56,6 +60,9 @@ def main():
 
     print("Uncomp degree 1 MAC only")
     _,_,fit,_,_ =   polynomial_fit(df[["MAC"]], output, 1)
+
+    print("Uncomp degree 1 memonly")
+    polynomial_fit(df[["memory"]], output, 1)
 
     print(fit.coef_)
     print(fit.intercept_)
