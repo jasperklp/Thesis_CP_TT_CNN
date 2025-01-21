@@ -553,7 +553,7 @@ def RAM_MKL(in_channel, out_channel, kernel_size, in_width, in_height, out_width
 
     return sum(Filter)
 
-def RAM_MKL_1x1_conv(rank,kernel_size : int, in_height, in_width,out_height,out_width):
+def RAM_MKL_grouped_conv(rank,kernel_size : int, in_height, in_width,out_height,out_width):
     """
         This function calculats the amount of RAM for the 1x1 layer in the non-forced case.
 
@@ -700,8 +700,8 @@ def get_RAM_realistic(in_channel, out_channel, kernel_size, image, method, strid
         Model_size = sum([rank*in_channel, rank*kernel_size[0], rank*kernel_size[1],rank*out_channel])
 
         Filter_1 = RAM_choose_MKL_or_nativePT(in_channel, rank, (1,1), [1,1], [0,0], [1,1], image[0], image[1], image[0], image[1], True)
-        Filter_2 = RAM_MKL_1x1_conv(rank, kernel_size[0], image[0], image[1], image_out[0], image[1])
-        Filter_3 = RAM_MKL_1x1_conv(rank, kernel_size[1], image_out[0], image[1], image_out[0], image_out[1])
+        Filter_2 = RAM_MKL_grouped_conv(rank, kernel_size[0], image[0], image[1], image_out[0], image[1])
+        Filter_3 = RAM_MKL_grouped_conv(rank, kernel_size[1], image_out[0], image[1], image_out[0], image_out[1])
         Filter_4 = RAM_choose_MKL_or_nativePT(rank, out_channel, (1,1), [1], [0], [1], image_out[0], image_out[1], image_out[0], image_out[1])
 
         output = [Input_image, Model_size, Filter_1, Filter_2, Filter_3, Filter_4]
