@@ -121,15 +121,15 @@ def plot_image_size_expect_ratio(results, measurement_parameters, model_types):
         ax[i//2][i%2].set_xscale("log")
         ax[i//2][i%2].set_ylabel("Ratio")
         ax[i//2][i%2].set_xlabel("In_channels = out_channels = ")
-        ax[i//2][i%2].set_ylim([0.95,1.05])
+        ax[i//2][i%2].set_ylim([0.9,1.1])
         ax[i//2][i%2].set_xticks(measurement_parameters.in_channel)
         ax[i//2][i%2].set_xticklabels(measurement_parameters.in_channel)
 
 
     plt.suptitle("Ratio between expected and measured memory for different values.")
     
-    
-    plt.legend(model_types, loc = 'lower left', bbox_to_anchor = (1.05,0.5),borderaxespad=0.)
+    model_types[0] = "Original"
+    plt.legend(model_types, loc = 'lower left', bbox_to_anchor = (1.05,0.3),borderaxespad=0.)
     plt.tight_layout(rect=[0,0,0.9,1])
     fig.subplots_adjust(hspace=0.5, right=0.8)
     plt.show()
