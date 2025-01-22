@@ -10,20 +10,25 @@ import matplotlib.pyplot as plt
 
 
 def main():
-    df_pytorch = False
-    tt = True
-    if tt == True:
-        read_file  = "2024-12-04_16.13.43"
-        folder = "verify_model_matching_tt_kernel_size_default_pytorch"
-    else:
-        if df_pytorch == True:
-            read_file  = "2024-11-12_10.49.10"
-            folder = "verify_model_matching_kernel_size_default_pytorch"
-        else:
-            read_file = "2024-11-29_14.58.56"
-            folder = "verify_model_matching_kernel_size"
+    # df_pytorch = False
+    # tt = True
+    # if tt == True:
+    #     read_file  = "2024-12-04_16.13.43"
+    #     folder = "verify_model_matching_tt_kernel_size_default_pytorch"
+    # else:
+    #     if df_pytorch == True:
+    #         read_file  = "2024-11-12_10.49.10"
+    #         folder = "verify_model_matching_kernel_size_default_pytorch"
+    #     else:
+    #         read_file = "2024-11-29_14.58.56"
+    #         folder = "verify_model_matching_kernel_size"
 
-    results, measurement_parameters, model_types = utils.preprocess_measurement_data(read_file,folder, "kernel_size", "in_channel")
+    folder = "verify_model_matching_ttcp_kernel_size_default_pytorch"
+    read_file = "2025-01-21_16.27.13"
+
+    
+
+    results, measurement_parameters, model_types = utils.preprocess_measurement_data(read_file,folder, "kernel_size", "in_channel", used_ranks = None, used_models = None)
 
     # plot_image_size_data(results, measurement_parameters, model_types)
     # plot_image_size_data_ratio(results, measurement_parameters, model_types)
@@ -102,10 +107,10 @@ def plot_image_size_expect_ratio(results, measurement_parameters, model_types):
     fig,ax = plt.subplots(2,2)
     
     for i,item in enumerate(model_types):
-        ax[0][0].scatter(measurement_parameters.in_channel,results[0,i,0,:] / results[1,i,0,:])
-        ax[0][1].scatter(measurement_parameters.in_channel,results[0,i,1,:] / results[1,i,1,:])
-        ax[1][0].scatter(measurement_parameters.in_channel,results[0,i,2,:] / results[1,i,2,:])       
-        ax[1][1].scatter(measurement_parameters.in_channel,results[0,i,3,:] / results[1,i,3,:])
+        ax[0][0].scatter(measurement_parameters.in_channel,results[0,i,0,:] / results[1,i,0,:], c=utils.get_mathplotlib_colours(i))
+        ax[0][1].scatter(measurement_parameters.in_channel,results[0,i,1,:] / results[1,i,1,:], c=utils.get_mathplotlib_colours(i))
+        ax[1][0].scatter(measurement_parameters.in_channel,results[0,i,2,:] / results[1,i,2,:], c=utils.get_mathplotlib_colours(i))       
+        ax[1][1].scatter(measurement_parameters.in_channel,results[0,i,3,:] / results[1,i,3,:], c=utils.get_mathplotlib_colours(i))
 
     var1 = measurement_parameters.kernel_size
     var2 = measurement_parameters.in_channel
@@ -116,7 +121,7 @@ def plot_image_size_expect_ratio(results, measurement_parameters, model_types):
         ax[i//2][i%2].set_xscale("log")
         ax[i//2][i%2].set_ylabel("Ratio")
         ax[i//2][i%2].set_xlabel("In_channels = out_channels = ")
-        ax[i//2][i%2].set_ylim([0.5,1.1])
+        ax[i//2][i%2].set_ylim([0.95,1.05])
         ax[i//2][i%2].set_xticks(measurement_parameters.in_channel)
         ax[i//2][i%2].set_xticklabels(measurement_parameters.in_channel)
 
@@ -124,7 +129,7 @@ def plot_image_size_expect_ratio(results, measurement_parameters, model_types):
     plt.suptitle("Ratio between expected and measured memory for different values.")
     
     
-    plt.legend(model_types, loc = 'lower left', bbox_to_anchor = (1.05,1.05),borderaxespad=0.)
+    plt.legend(model_types, loc = 'lower left', bbox_to_anchor = (1.05,0.5),borderaxespad=0.)
     plt.tight_layout(rect=[0,0,0.9,1])
     fig.subplots_adjust(hspace=0.5, right=0.8)
     plt.show()

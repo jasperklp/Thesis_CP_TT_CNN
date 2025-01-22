@@ -11,13 +11,20 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(
 from Experiment_1.experiment_helper_functions import measurement
 
 
-def get_mathplotlib_colours():
-    mathplotlib_colours = ['tab:blue', 'tab:orange','tab:green', 'tab:red','tab:purple', 'tab:brown', 'tab:pink','tab:grey', 'tab:olive','tab:cyan']
+def get_mathplotlib_colours(i = None):
+    """
+        Returns a color or an array of colors
+
+        Args:
+            i   : if None returns whole array of colors (Default)
+                : if int returns the ith color. It does wrap around the end
+    """
+    mathplotlib_colours = ['tab:blue', 'tab:orange','tab:green', 'tab:red','tab:purple', 'tab:brown', 'tab:pink','tab:grey', 'tab:olive','tab:cyan', 'lightpink', 'bisque', 'yellow','lime', 'midnightblue', ]
+    
+    if i is not None:
+        return mathplotlib_colours[i%len(mathplotlib_colours)]
+        
     return mathplotlib_colours
-
-def second_util():
-    print(1)
-
 
 
 def verify_if_measurements_are_detministic(outcomes_data, verbose: bool = False):
@@ -99,7 +106,7 @@ def verify_if_measurements_are_detministic(outcomes_data, verbose: bool = False)
     #Return if no measurment encouters problems or verbose = True
     return return_value
 
-def preprocess_measurement_data(read_file, folder, measurement_variable, measurement_variable2 = None):
+def preprocess_measurement_data(read_file, folder, measurement_variable, measurement_variable2 = None, used_ranks = None, used_models = None):
     """
         This puts all measurement data in a fixed sturcture.
 
@@ -125,7 +132,7 @@ def preprocess_measurement_data(read_file, folder, measurement_variable, measure
 
     #Re obtain the measurement class to know which elements are present
     measurement_parameters = measurement.from_dict(data["Setup_data"])
-    model_types = ["uncomp"] + measurement_parameters.rank
+    model_types = get_model_types(data, filter_models=used_models, filter_ranks=used_ranks)
 
     if measurement_variable2 == None:
         results = np.zeros((2,len(model_types), len(getattr(measurement_parameters, measurement_variable))),int)
@@ -137,10 +144,14 @@ def preprocess_measurement_data(read_file, folder, measurement_variable, measure
         first_index = None
         second_index = None
         #First get the first index which is the model type
-        if dif_parameter_result["model_type"] == "uncomp":
-            first_index = 0
-        else:
-            first_index = model_types.index(dif_parameter_result["rank"])
+        # Exception is used when a setup is in data, but will not be in plot.
+        try:
+            try:
+                first_index = model_types.index(f"{dif_parameter_result["model_type"]} {dif_parameter_result["rank"]}")
+            except KeyError:
+                first_index = model_types.index(f"{dif_parameter_result["model_type"]}")
+        except ValueError:
+            continue
 
         #Get second index, which is the index that is looped over during measurment.
         datapoint = dif_parameter_result[f"{measurement_variable}"]

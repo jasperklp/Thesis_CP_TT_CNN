@@ -30,7 +30,7 @@ def main(measure_data : helper.measurement, filename, routine = None):
     data_folder = f"{os.getcwd()}\\data"
     experiment_name = filename
     event_name = f"{start_date}_{start_time}"
-    logging.basicConfig(filename=f"{data_folder}\\log\\{experiment_name}\\{event_name}.txt",level=logging.INFO, force=True)
+    logging.basicConfig(filename=f"{data_folder}\\log\\{experiment_name}\\{event_name}.txt",level=logging.DEBUG, force=True)
     
     logger.info(f"The measurement routine = {routine}")
     #Try whether test data folder is available

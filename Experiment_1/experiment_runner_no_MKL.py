@@ -81,7 +81,7 @@ def model_runner(model, epochs : int, image_size : int|tuple, device : str = 'cp
     with torch.no_grad():
        
             for i in range(epochs):
-                if (mkl_verbose == "true") or ((mkl_verbose == "one") and (i == 1)):
+                if (mkl_verbose == "true") or ((mkl_verbose == "one") and (i == 0)):
                     mkl_verbosity = torch.backends.mkldnn.VERBOSE_ON
                 else:
                     mkl_verbosity = torch.backends.mkldnn.VERBOSE_OFF

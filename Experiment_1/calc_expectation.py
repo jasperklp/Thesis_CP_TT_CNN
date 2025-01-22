@@ -568,19 +568,25 @@ def RAM_MKL_grouped_conv(rank,kernel_size : int, in_height, in_width,out_height,
             The amount of RAM for that layer.
     """
     #In case rank is one, the number of groups is one and you get another situation.
-    if (    (rank ==  1) and 
-            kernel_size <= 3 and
+    if rank == 1:
+        if(
+            (kernel_size[0] <= 3 or kernel_size[1]<= 3)and
             1 and#It is assumed there is no batching:
             (rank * in_height * in_width <= 20480)
-    ):
-        # print("no_MKL")
-        logger.debug("No MKL")
-        return RAM_no_mkl(rank, out_height, out_width) * (kernel_size + 1)
+        ):
+            logger.debug("No MKL")
+            return RAM_no_mkl(rank, out_height, out_width) * (math.prod(kernel_size) + 1)
+        else:
+            logger.debug("MKL")
+            Filter = []
+            Filter.append(get_mulitple_of_SIMD(rank) * math.prod(kernel_size))
+            Filter.append(get_mulitple_of_SIMD(rank)* out_width * out_height)
+            Filter.append(rank* out_width * out_height)
     else :
         logger.debug("MKL")
         Filter = []
         Filter.append(get_mulitple_of_SIMD(rank) * in_width * in_height)
-        Filter.append(get_mulitple_of_SIMD(rank) * kernel_size)
+        Filter.append(get_mulitple_of_SIMD(rank) * math.prod(kernel_size))
         Filter.append(get_mulitple_of_SIMD(rank)* out_width * out_height)
         Filter.append(rank* out_width * out_height)
         # print("MKL")
@@ -700,8 +706,8 @@ def get_RAM_realistic(in_channel, out_channel, kernel_size, image, method, strid
         Model_size = sum([rank*in_channel, rank*kernel_size[0], rank*kernel_size[1],rank*out_channel])
 
         Filter_1 = RAM_choose_MKL_or_nativePT(in_channel, rank, (1,1), [1,1], [0,0], [1,1], image[0], image[1], image[0], image[1], True)
-        Filter_2 = RAM_MKL_grouped_conv(rank, kernel_size[0], image[0], image[1], image_out[0], image[1])
-        Filter_3 = RAM_MKL_grouped_conv(rank, kernel_size[1], image_out[0], image[1], image_out[0], image_out[1])
+        Filter_2 = RAM_MKL_grouped_conv(rank, (kernel_size[0], 1), image[0], image[1], image_out[0], image[1])
+        Filter_3 = RAM_MKL_grouped_conv(rank, (1, kernel_size[1]), image_out[0], image[1], image_out[0], image_out[1])
         Filter_4 = RAM_choose_MKL_or_nativePT(rank, out_channel, (1,1), [1], [0], [1], image_out[0], image_out[1], image_out[0], image_out[1])
 
         output = [Input_image, Model_size, Filter_1, Filter_2, Filter_3, Filter_4]

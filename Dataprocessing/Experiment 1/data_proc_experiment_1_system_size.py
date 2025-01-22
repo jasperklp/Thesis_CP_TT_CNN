@@ -10,24 +10,27 @@ import matplotlib.pyplot as plt
 
 
 def main():
-    use_df_pytorch = False
-    tt = True
-    if tt == True:
-        read_file  = "2024-12-04_16.07.09"
-        folder = "verify_model_matching_tt_image_size_default_pytorch"
-    else:
-        if use_df_pytorch == True:
-            read_file  = "2024-11-29_17.25.11"
-            folder = "verify_model_matching_image_size_default_pytorch"
-        else:
-            read_file  = "2024-11-29_16.42.11"
-            folder = "verify_model_matching_image_size"
+    # use_df_pytorch = False
+    # tt = True
+    # if tt == True:
+    #     read_file  = "2024-12-04_16.07.09"
+    #     folder = "verify_model_matching_tt_image_size_default_pytorch"
+    # else:
+    #     if use_df_pytorch == True:
+    #         read_file  = "2024-11-29_17.25.11"
+    #         folder = "verify_model_matching_image_size_default_pytorch"
+    #     else:
+    #         read_file  = "2024-11-29_16.42.11"
+    #         folder = "verify_model_matching_image_size"
+
+    folder =     folder = "verify_model_matching_ttcp_image_size_default_pytorch"
+    read_file = "2025-01-21_16.26.18"
 
     results, measurement_parameters, model_types = utils.preprocess_measurement_data(read_file,folder, "image_size", "in_channel")
 
     # plot_image_size_data(results, measurement_parameters, model_types)
     # plot_image_size_data_ratio(results, measurement_parameters, model_types)
-    plot_image_size_expect_ratio(results, measurement_parameters, model_types, tt = tt)
+    plot_image_size_expect_ratio(results, measurement_parameters, model_types)
 
 
 #Create figure
@@ -102,10 +105,10 @@ def plot_image_size_expect_ratio(results, measurement_parameters, model_types, t
     # ax = ax[0]
     print(results.shape)
     for i,item in enumerate(model_types):
-        ax[0][0].scatter(measurement_parameters.in_channel,results[0,i,0,:] / results[1,i,0,:])
-        ax[0][1].scatter(measurement_parameters.in_channel,results[0,i,1,:] / results[1,i,1,:])
-        ax[1][0].scatter(measurement_parameters.in_channel,results[0,i,2,:] / results[1,i,2,:])       
-        ax[1][1].scatter(measurement_parameters.in_channel,results[0,i,3,:] / results[1,i,3,:])
+        ax[0][0].scatter(measurement_parameters.in_channel,results[0,i,0,:] / results[1,i,0,:], c=utils.get_mathplotlib_colours(i))
+        ax[0][1].scatter(measurement_parameters.in_channel,results[0,i,1,:] / results[1,i,1,:], c=utils.get_mathplotlib_colours(i))
+        ax[1][0].scatter(measurement_parameters.in_channel,results[0,i,2,:] / results[1,i,2,:], c=utils.get_mathplotlib_colours(i))       
+        ax[1][1].scatter(measurement_parameters.in_channel,results[0,i,3,:] / results[1,i,3,:], c=utils.get_mathplotlib_colours(i))
 
     var1 = measurement_parameters.image_size
     var2 = measurement_parameters.in_channel
@@ -123,8 +126,6 @@ def plot_image_size_expect_ratio(results, measurement_parameters, model_types, t
 
     plt.suptitle("Memory for different image_sizes and in_channel sizes")
     print(model_types)
-    if tt == True:
-        model_types = [f"tt {model_type}" if model_type != "uncomp" else "uncomp" for model_type in model_types]
     
     plt.legend(model_types, loc = 'lower left', bbox_to_anchor = (1.05,1.05),borderaxespad=0.)
     plt.tight_layout(rect=[0,0,0.9,1])
