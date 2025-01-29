@@ -9,6 +9,10 @@ import sys
 sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 
 from Experiment_1.experiment_helper_functions import measurement
+from Experiment_1.calc_expectation import ram_estimation_2d
+
+def uncomp_alternative_name():
+    return "regular"
 
 
 def get_mathplotlib_colours(i = None):
@@ -25,6 +29,13 @@ def get_mathplotlib_colours(i = None):
         return mathplotlib_colours[i%len(mathplotlib_colours)]
         
     return mathplotlib_colours
+
+def list_intersection(list1 : list, list2 : list):
+    """
+        Returns the intersection of two lists, with the ordering of the first list
+    """
+
+    return [i for i in list1 if i in list2]
 
 
 def verify_if_measurements_are_detministic(outcomes_data, verbose: bool = False):
@@ -133,7 +144,6 @@ def preprocess_measurement_data(read_file, folder, measurement_variable, measure
     #Re obtain the measurement class to know which elements are present
     measurement_parameters = measurement.from_dict(data["Setup_data"])
     model_types = get_model_types(data, filter_models=used_models, filter_ranks=used_ranks)
-
     if measurement_variable2 == None:
         results = np.zeros((2,len(model_types), len(getattr(measurement_parameters, measurement_variable))),int)
     else:
@@ -179,6 +189,7 @@ def preprocess_measurement_data(read_file, folder, measurement_variable, measure
     return (results, measurement_parameters, model_types)
 
 
+
 def check_to_list(measurement_variable, measurement_range):
     if measurement_variable in {"image_size", "kernel_size", "padding", "stride", "dilation"}:
         return [[i, i] if not isinstance(i,list) else i for i in measurement_range ]
@@ -194,6 +205,7 @@ def get_model_types(data, filter_ranks = None, filter_models = None) :
             data    :   data from a JSON file
         Returns:
             model_types : List of "uncomp" or "decomposition + rank"
+                        : "Default order/default accepted = ["uncomp", "cp", "tt"]
 
     """
 
@@ -205,23 +217,22 @@ def get_model_types(data, filter_ranks = None, filter_models = None) :
         used_ranks = measurement_parameters.rank
     #Else only the ranks that are in the input and in the measurement data
     else:
-        used_ranks = list(set(measurement_parameters.rank) & set(filter_ranks))
+        used_ranks = list_intersection(filter_ranks, measurement_parameters.rank)
 
     #Same for models
     if filter_models is None:
-        used_models = measurement_parameters.models
+        used_models = list_intersection(["uncomp", "cp", "tt"],measurement_parameters.models)
     else:
-        used_models = list(set(measurement_parameters.models) & set(filter_models))
+        used_models = list_intersection(filter_models, measurement_parameters.models)
 
     
-    print(measurement_parameters.models)
     #Determine number of different measurements
     nr_of_models = len(used_ranks) * len(used_models) 
-    model_types = [f"{model} {rank}" for rank in used_ranks for model in used_models if model not in "uncomp"]
+    model_types = [f"{model} {rank}"  for model in used_models for rank in used_ranks if model not in "uncomp"]
+    
     if "uncomp" in used_models:
         nr_of_models = nr_of_models - len(used_ranks) + 1
         model_types = ["uncomp"] + model_types
-        
     return model_types
 
 
@@ -231,6 +242,7 @@ def preprocess_time_data(read_file, folder, measurement_variable = None, measure
         Processes measurment data
 
         Processes measurment data in a numpy format. It accepts multiple decomposed types.
+        Sorts measurements by the measurement variables. If there are two viable options it overwrites.
 
         Args:
 
@@ -278,7 +290,7 @@ def preprocess_time_data(read_file, folder, measurement_variable = None, measure
             continue
 
         if measurement_variable2 is None:
-            results[0, modelnr, measurement_range.index(test[f"{measurement_variable}"])] = statistics.mean(test["Inference duration"])
+            results[0, modelnr, measurement_range.index(test[f"{measurement_variable}"])] = statistics.median(test["Inference duration"])
             results[1, modelnr, measurement_range.index(test[f"{measurement_variable}"])] = test["measurements"][0]["Total allocated RAM"]
             results[2, modelnr, measurement_range.index(test[f"{measurement_variable}"])] = test["Expected MAC total"]
         elif measurement_variable2 is not None:
@@ -287,6 +299,128 @@ def preprocess_time_data(read_file, folder, measurement_variable = None, measure
             results[2, modelnr, measurement_range.index(test[f"{measurement_variable}"]), measurement_range2.index(test[f"{measurement_variable2}"])] = test["Expected MAC total"]
 
     return results, model_types
+
+def preprocess_time_all_combinations(read_file, folder, measurement_variable = None, iterator_routine = None, used_ranks = None, used_models = None):
+    """"
+        Processes measurment data
+
+        Processes measurment data in a numpy format. It accepts multiple decomposed types.
+
+        Args:
+
+
+        Returns:
+            results     :   3(4)-D Numpy array conatining all results (datanr , modelnr, first indexnr (,2nd index nr))
+                                datanr (1 : Inference duration, 2: Total allocated RAM, 3: Expected MAC total)
+
+            model_types : An array with model types
+    """
+
+    with open(f"{os.getcwd()}\\data\\data\\{folder}\\{read_file}.json") as json_file:
+        data = json.load(json_file)
+
+
+    model_types = get_model_types(data, used_ranks, used_models) 
+    nr_of_models = len(model_types)
+    
+    measurement_parameters = measurement.from_dict(data["Setup_data"])
+
+    #Determine number of total tests
+    nr_of_tests = measurement_parameters.amount_of_measurements(iterator_routine)
+
+    #Determine the measurment variables
+    results = np.zeros((3, nr_of_models, nr_of_tests))
+    i = -1
+    for test in data["outcomes"]:
+        # Exception is used when a setup is in data, but will not be in plot.
+        try:
+            try:
+                modelnr = model_types.index(f"{test["model_type"]} {test["rank"]}")
+            except KeyError:
+                modelnr = model_types.index(f"{test["model_type"]}")
+        except ValueError:
+            continue
+
+        i += 1
+        if measurement_variable is None:
+            results[0, modelnr, i//nr_of_models] = statistics.median(test["Inference duration"])
+            results[1, modelnr, i//nr_of_models] = test["measurements"][0]["Total allocated RAM"]
+            results[2, modelnr, i//nr_of_models] = test["Expected MAC total"]
+    return results, model_types, nr_of_tests
+
+
+def get_theoretical_results_in_preprocess_measurement_format(read_file, folder, iteration_method :str = None, measurement_variable = None, measurement_variable2 = None, iterator_routine = None, used_ranks = None, used_models = None):
+    """
+        Docstring
+    """
+
+    with open(f"{os.getcwd()}\\data\\data\\{folder}\\{read_file}.json") as json_file:
+        data = json.load(json_file)
+
+    measurement_parameters = measurement.from_dict(data["Setup_data"])
+    model_types = get_model_types(data, filter_models=used_models, filter_ranks=used_ranks)
+    if iteration_method == None:
+        iterator = measurement_parameters.__iter__()
+    elif iteration_method == "same_in_out":
+        iterator = measurement_parameters.iter_same_in_out()
+    elif iteration_method == "same_in_out_same_kernel_pad":
+        iterator = measurement_parameters.iter_same_in_out_same_kernel_pad()
+    else:
+        raise ValueError("Routine is not valid. See the main function for valid options or give no option for default routine")
+
+    with open(f"{os.getcwd()}\\data\\data\\{folder}\\{read_file}.json") as json_file:
+        data = json.load(json_file)
+
+   
+
+    if measurement_variable2 == None:
+        results = np.zeros((1,len(model_types), len(getattr(measurement_parameters, measurement_variable))),int)
+    else:
+        results = np.zeros((1,len(model_types), len(getattr(measurement_parameters, measurement_variable)), len(getattr(measurement_parameters, measurement_variable2))),int)
+    
+    for (in_channel, out_channel, kernel_size, stride, padding, dilation, image_size, ranks, _ , models) in iterator:
+        # print(models)
+        for rank in ranks:
+            for model in models:
+
+                data_dict = {
+                    "in_channel"        : in_channel,
+                    "out_channel"       : out_channel,
+                    "kernel_size"       : kernel_size,
+                    "stride"            : stride,
+                    "padding"           : padding,
+                    "dilation"          : dilation,
+                    "image_size"        : image_size,
+                    "rank"              : rank,
+                    "model"             : model   
+                }
+                # print(model)
+                try:
+                    if model == "uncomp":
+                        first_index = model_types.index(f"{model}")
+                    else:
+                        first_index = model_types.index(f"{model} {rank}")                       
+                except ValueError:
+                    continue
+                
+                # print(model)
+
+                datapoint = data_dict[f"{measurement_variable}"]
+                datapoint = datapoint[0] if isinstance(datapoint,list) else datapoint
+                second_index = getattr(measurement_parameters, measurement_variable).index(datapoint)
+
+                if measurement_variable2 is None:
+                    results[0,first_index,second_index] = ram_estimation_2d(in_channel, out_channel, kernel_size, image_size, model, stride, padding, dilation, rank, 32, True, True)
+                else :
+                    datapoint = data_dict[f"{measurement_variable2}"]
+                    datapoint = datapoint[0] if isinstance(datapoint,list) else datapoint
+                    third_index = getattr(measurement_parameters, measurement_variable2).index(datapoint)
+                    results[0,first_index,second_index,third_index] = ram_estimation_2d(in_channel, out_channel, kernel_size, image_size, model, stride, padding, dilation, rank, 32, True, True)
+
+    return results, measurement_parameters, model_types
+
+
+
 
 def get_pandas_infernce_memory_pairs(data, used_ranks = None, used_models = None):
     """

@@ -25,8 +25,8 @@ def main():
     # plot_time_per_system(file,  folder, measurement_parameters, used_models=["uncomp", "tt"])
     plot_time_per_mem(file, folder, measurement_parameters, used_models=used_models, used_ranks=used_ranks)
     plot_time_per_MAC(file, folder, measurement_parameters, used_models=used_models, used_ranks=used_ranks)
-    plot_time_per_mem(file, folder, measurement_parameters, used_models=used_models, used_ranks=used_ranks, zoomed="super")
-    plot_time_per_MAC(file, folder, measurement_parameters, used_models=used_models, used_ranks=used_ranks, zoomed="super")
+    # plot_time_per_mem(file, folder, measurement_parameters, used_models=used_models, used_ranks=used_ranks, zoomed="super")
+    # plot_time_per_MAC(file, folder, measurement_parameters, used_models=used_models, used_ranks=used_ranks, zoomed="super")
     plot_time_per_mem(file, folder, measurement_parameters, used_models=used_models, used_ranks=used_ranks, zoomed=True)
     plot_time_per_MAC(file, folder, measurement_parameters, used_models=used_models, used_ranks=used_ranks, zoomed=True)
     # plot_time_over_mem_four(file, folder, measurement_parameters)
@@ -40,7 +40,7 @@ def plot_time_per_system(file, folder, measurement_parameters : measurement, use
     var2 = "image_size"
 
     results, model_types = utils.preprocess_time_data(file, folder, var1, var2, "iter_same_in_out", used_models=used_models, used_ranks=used_ranks)
-    print(measurement_parameters)
+    # print(measurement_parameters)
     for i,model in enumerate(model_types):
         ax[0][0].scatter(getattr(measurement_parameters,var1), results[0,i,0,:])
         ax[0][1].scatter(getattr(measurement_parameters,var1), results[0,i,1,:])
@@ -56,6 +56,7 @@ def plot_time_per_system(file, folder, measurement_parameters : measurement, use
         ax[i//2][i%2].set_xticks(measurement_parameters.in_channel)
         ax[i//2][i%2].set_xticklabels(measurement_parameters.in_channel)
 
+    model_types[0] = utils.uncomp_alternative_name()
     plt.legend(model_types, loc = 'lower left', bbox_to_anchor = (1.05,1.05),borderaxespad=0.)
     plt.tight_layout(rect=[0,0,0.9,1])
     fig.subplots_adjust(hspace=0.5, right=0.8)
@@ -63,16 +64,14 @@ def plot_time_per_system(file, folder, measurement_parameters : measurement, use
 
 def plot_time_per_mem(file, folder, measurement_parameters : measurement, used_models = None, used_ranks = None, zoomed : bool|str = False):
     fig = plt.figure()
-    matplotlib_colours = utils.get_mathplotlib_colours()
     var1 = "in_channel"
     var2 = "image_size"
-    results, model_types = utils.preprocess_time_data(file, folder, var1, var2, "iter_same_in_out", used_models=used_models, used_ranks=used_ranks)
+    results, model_types, nr_of_tests = utils.preprocess_time_all_combinations(file, folder, used_models=used_models, used_ranks=used_ranks)
     markers = ["o", "v", "^", "<", ">", "1","2","3","4","8","s","p","P","*","h","H","D","d"]
 
-    for i in range(len(measurement_parameters.in_channel) * len(measurement_parameters.image_size)):
+    for i in range(nr_of_tests):
         for j,model in enumerate(model_types):
-            divlen = (len(getattr(measurement_parameters,var2)))
-            plt.scatter(results[1,j,i//divlen,i%divlen] / 1024**2,results[0,j,i//divlen,i%divlen], marker = markers[i%len(markers)], c=matplotlib_colours[j%len(matplotlib_colours)])
+            plt.scatter(results[1,j,i] / 1024**2,results[0,j,i],c=utils.get_mathplotlib_colours(j))
 
     # plt.xscale("log")
     # plt.yscale("log")
@@ -91,7 +90,7 @@ def plot_time_per_mem(file, folder, measurement_parameters : measurement, used_m
         plt.suptitle("Memory operations vs time")
 
 
-
+    model_types[0] = utils.uncomp_alternative_name()
     plt.legend(model_types)
     plt.tight_layout(rect=[0,0,0.9,1])
     # fig.subplots_adjust(hspace=0.5, right=0.8)
@@ -99,16 +98,13 @@ def plot_time_per_mem(file, folder, measurement_parameters : measurement, used_m
 
 def plot_time_per_MAC(file, folder, measurement_parameters : measurement, used_models = None, used_ranks = None, zoomed : bool = False):
     fig = plt.figure()
-    matplotlib_colours = utils.get_mathplotlib_colours()
-    var1 = "in_channel"
-    var2 = "image_size"
-    results, model_types = utils.preprocess_time_data(file, folder, var1, var2, "iter_same_in_out", used_models=used_models, used_ranks=used_ranks)
+
+    results, model_types, nr_of_tests = utils.preprocess_time_all_combinations(file, folder, used_models=used_models, used_ranks=used_ranks)
     markers = ["o", "v", "^", "<", ">", "1","2","3","4","8","s","p","P","*","h","H","D","d"]
 
-    for i in range(len(measurement_parameters.in_channel) * len(measurement_parameters.image_size)):
+    for i in range(nr_of_tests):
         for j,model in enumerate(model_types):
-            divlen = (len(getattr(measurement_parameters,var2)))
-            plt.scatter(results[2,j,i//divlen,i%divlen],results[0,j,i//divlen,i%divlen], marker = markers[i%len(markers)], c=matplotlib_colours[j%len(matplotlib_colours)])
+            plt.scatter(results[2,j,i],results[0,j,i], c=utils.get_mathplotlib_colours(j))
 
     # plt.xscale("log")
     # plt.yscale("log")
@@ -127,7 +123,7 @@ def plot_time_per_MAC(file, folder, measurement_parameters : measurement, used_m
     else:
         plt.suptitle("MAC operations vs time")
     # plt.axvline(24)
-
+    model_types[0] = utils.uncomp_alternative_name()
     plt.legend(model_types)
     plt.tight_layout(rect=[0,0,0.9,1])
     # fig.subplots_adjust(hspace=0.5, right=0.8)
@@ -139,10 +135,10 @@ def plot_time_over_mem_four(file, folder, measurement_parameters : measurement, 
     matplotlib_colours = utils.get_mathplotlib_colours()
     var1 = "image_size"
     var2 = "in_channel"
-    results, model_types = utils.preprocess_time_data(file, folder, var1, var2, "iter_same_in_out", used_models=["uncomp", "tt","cp"], used_ranks=[0.01, 0.05, 0.1])
+    results, measurement_parameters, model_types = utils.preprocess_measurement_data(file, folder, var1, used_models=["uncomp", "tt","cp"], used_ranks=[0.01, 0.05, 0.1])
     markers = ["o", "v", "^", "<", ">", "1","2","3","4","8","s","p","P","*","h","H","D","d"]
 
-    for i, var in enumerate(getattr(measurement_parameters,var1)):
+    for i, var in enumerate(getattr(measurement_parameters,var2)):
         for j,model in enumerate(model_types):
             ax[0][0].scatter(results[1,j,0,i] ,results[0,j,0,i], marker = markers[i], c=matplotlib_colours[j])
             ax[0][1].scatter(results[1,j,1,i] ,results[0,j,1,i], marker = markers[i], c=matplotlib_colours[j])
@@ -150,6 +146,10 @@ def plot_time_over_mem_four(file, folder, measurement_parameters : measurement, 
             ax[1][1].scatter(results[1,j,3,i] ,results[0,j,3,i], marker = markers[i], c=matplotlib_colours[j])
 
     for i, var in enumerate(getattr(measurement_parameters,var2)):
+            if i >= 4:
+                continue
+            print(i)
+            print(i//2)
             ax[i//2][i%2].set_xlabel("Memory [B]")
             ax[i//2][i%2].set_ylabel("Time [s]")
             # ax[i//2][i%2].set_xscale("log")

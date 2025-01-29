@@ -579,6 +579,9 @@ def RAM_MKL_grouped_conv(rank,kernel_size : int, in_height, in_width,out_height,
         else:
             logger.debug("MKL")
             Filter = []
+            #Use the normal ungroupped version
+            if (math.prod(kernel_size) == 1):
+                Filter.append(get_mulitple_of_SIMD(rank) * in_width * in_height) #Copy of the input image
             Filter.append(get_mulitple_of_SIMD(rank) * math.prod(kernel_size))
             Filter.append(get_mulitple_of_SIMD(rank)* out_width * out_height)
             Filter.append(rank* out_width * out_height)

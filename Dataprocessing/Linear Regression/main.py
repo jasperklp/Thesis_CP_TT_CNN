@@ -29,13 +29,12 @@ def main():
 
     # Get results for TT CP
     df = utils.get_pandas_infernce_memory_pairs(data, used_models=["tt","cp"], used_ranks=[0.01, 0.05,0.1, 0.25])
-    print(df)
     input = df[["memory", "MAC"]]
     output = df[["duration"]]
 
     print("TT/CP degree 1")
     _,_,_, output_test, output_pred_test = polynomial_fit(input, output, 1)
-    plot_predicted_vs_actual(output_test, output_pred_test, "TT/CP CNN mem + ops degree 1")
+    # plot_predicted_vs_actual(output_test, output_pred_test, "TT/CP CNN mem + ops degree 1")
 
     print("TT/CP degree 2")
     _,_,_, output_test, output_pred_test = polynomial_fit(input, output, 2)
@@ -53,7 +52,7 @@ def main():
 
     print("Uncomp degree 1")
     _,_,_, output_test, output_pred_test = polynomial_fit(input, output, 1)
-    plot_predicted_vs_actual(output_test, output_pred_test, "Regular CNN mem + ops degree 1")
+    # plot_predicted_vs_actual(output_test, output_pred_test, "Regular CNN mem + ops degree 1")
 
     print("Uncomp degree 2")
     polynomial_fit(input, output, 2)
@@ -64,8 +63,7 @@ def main():
     print("Uncomp degree 1 memonly")
     polynomial_fit(df[["memory"]], output, 1)
 
-    print(fit.coef_)
-    print(fit.intercept_)
+
 
     
 
@@ -91,12 +89,12 @@ def polynomial_fit(input, output, polynomial_degree):
     evaluatortest = RegressionMetric(output_test.to_numpy(), output_pred_test, X_shape = input_train.shape)
 
     print("Evaluator on train data")
-    print(evaluatortrain.RMSE())
+    print("{:e}".format(evaluatortrain.RMSE()))
     print(evaluatortrain.VAF())
     print(evaluatortrain.R2())
 
     print("Evaluator on test data")
-    print(evaluatortest.RMSE())
+    print(("{:e}".format(evaluatortest.RMSE())))
     print(evaluatortest.VAF())
     print(evaluatortest.R2())
     print("\n")
