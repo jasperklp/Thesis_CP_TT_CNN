@@ -4,7 +4,7 @@ import os
 #Adds root of thesis folder to sys path.
 sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 
-from Experiment_1.calc_expectation import calc_output_image_dim, CP_rank_from_compratio
+from Experiment_runner.calc_expectation import calc_output_image_dim, CP_rank_from_compratio
 from tensorly import validate_tt_rank
 
 

@@ -8,8 +8,10 @@ import sys
 #Adds root of thesis folder to sys path.
 sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 
-from Experiment_1.experiment_helper_functions import measurement
-from Experiment_1.calc_expectation import ram_estimation_2d
+
+
+from Experiment_runner.experiment_helper_functions import measurement
+from Experiment_runner.calc_expectation import ram_estimation_2d
 
 def uncomp_alternative_name():
     return "regular"
@@ -294,7 +296,7 @@ def preprocess_time_data(read_file, folder, measurement_variable = None, measure
             results[1, modelnr, measurement_range.index(test[f"{measurement_variable}"])] = test["measurements"][0]["Total allocated RAM"]
             results[2, modelnr, measurement_range.index(test[f"{measurement_variable}"])] = test["Expected MAC total"]
         elif measurement_variable2 is not None:
-            results[0, modelnr, measurement_range.index(test[f"{measurement_variable}"]), measurement_range2.index(test[f"{measurement_variable2}"])] = statistics.mean(test["Inference duration"])
+            results[0, modelnr, measurement_range.index(test[f"{measurement_variable}"]), measurement_range2.index(test[f"{measurement_variable2}"])] = statistics.median(test["Inference duration"])
             results[1, modelnr, measurement_range.index(test[f"{measurement_variable}"]), measurement_range2.index(test[f"{measurement_variable2}"])] = test["measurements"][0]["Total allocated RAM"]
             results[2, modelnr, measurement_range.index(test[f"{measurement_variable}"]), measurement_range2.index(test[f"{measurement_variable2}"])] = test["Expected MAC total"]
 
@@ -351,7 +353,7 @@ def preprocess_time_all_combinations(read_file, folder, measurement_variable = N
 
 def get_theoretical_results_in_preprocess_measurement_format(read_file, folder, iteration_method :str = None, measurement_variable = None, measurement_variable2 = None, iterator_routine = None, used_ranks = None, used_models = None):
     """
-        Docstring
+        Gets the theoretical amount of memory in the sameformat as the process and time. 
     """
 
     with open(f"{os.getcwd()}\\data\\data\\{folder}\\{read_file}.json") as json_file:

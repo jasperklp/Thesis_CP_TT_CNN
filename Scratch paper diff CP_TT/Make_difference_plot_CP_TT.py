@@ -4,8 +4,8 @@ import os
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import numpy as np
-from Experiment_1 import calc_expectation as calc_expextation
-from Experiment_1 import experiment_helper_functions as helper
+from Experiment_runner import calc_expectation as calc_expextation
+from Experiment_runner import experiment_helper_functions as helper
 import matplotlib.pyplot as plt
 
 

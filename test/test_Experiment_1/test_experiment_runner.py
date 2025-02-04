@@ -1,5 +1,5 @@
-from ...Experiment_1 import experiment_runner as runner
-from ...Experiment_1 import CNN_models
+from ...Experiment_runner import experiment_runner as runner
+from ...Experiment_runner import CNN_models
 
 #Do forall tests a simple short run s.t. it can be verified that all functionallity works in the end :)
 def test_for_uncomp_model():

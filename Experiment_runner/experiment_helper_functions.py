@@ -137,7 +137,7 @@ class measurement:
 
 
 
-def name_number(number : int, add_number = True, add_name_size_string = True):
+def name_number(number : int, add_number = True, add_name_size_string = True, always_three_digits = False):
     """
     This function converts an integer value to string containg the value in b, Kb, Mb, Gb, Tb
     
@@ -165,11 +165,27 @@ def name_number(number : int, add_number = True, add_name_size_string = True):
     
     if  (add_number == True)&(add_name_size_string == True):
         if i <= len(name):
-            return f'{number:.2f}{name[i]}'
+            if always_three_digits is False:
+                return f'{number:.2f}{name[i]}'
+            else:
+                if number > 100:
+                    return f'{int(number)}{name[i]}'
+                elif number >10:
+                    return f'{number:.1f}{name[i]}'
+                else:
+                    return f'{number:.2f}{name[i]}'
         else:
             raise NotImplemented('No name is present for such large number')
     elif (add_number == True) & (add_name_size_string == False):
-        return f'{number:.2f}'
+        if always_three_digits is False:
+            return f'{number:.2f}'
+        else:
+            if number > 100:
+                return f'{number}'
+            elif number >10:
+                return f'{number:.1f}'
+            else:
+                return f'{number:.2f}'
     elif (add_number == False) & (add_name_size_string == True):
         if  i<= len(name):
             return  name[i]

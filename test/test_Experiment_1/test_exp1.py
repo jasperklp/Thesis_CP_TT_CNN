@@ -1,4 +1,4 @@
-from ...Experiment_1 import calc_expectation
+from ...Experiment_runner import calc_expectation
 import pytest
 
 

@@ -7,7 +7,7 @@ import matplotlib.pyplot as plt
 #Adds root of thesis folder to sys path.
 sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 from Dataprocessing import dataproc_utils as utils
-from Experiment_1.experiment_helper_functions import measurement
+from Experiment_runner.experiment_helper_functions import measurement
 
 
 def main():
