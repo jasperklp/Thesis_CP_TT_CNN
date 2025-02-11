@@ -1,9 +1,6 @@
 #User added to standard Python .gitignore from VSCODE
 *.json
 *.html
-.\log
-data/data*/*
-!data/data/*/
 *.xlsx
 *.pdf
 *.txt
