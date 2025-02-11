@@ -13,13 +13,6 @@ import datetime
 import os
 import logging
 
-in_channels = 1024
-out_channels = 1024
-kernel_size = 3
-epochs      = 1
-image_size = 100
-c = [0.1]
-
 logger = logging.getLogger(__name__)
 
 

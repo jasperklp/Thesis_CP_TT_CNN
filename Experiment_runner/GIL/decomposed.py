@@ -1,5 +1,6 @@
 # Copied from 
-#https://github.com/jacobgil/pytorch-tensor-decompositions/blob/master/decompositions.py
+# https://github.com/jacobgil/pytorch-tensor-decompositions/blob/master/decompositions.py
+# Some slight changes are made to accoumodate new tensorly output format
 
 import tensorly as tl
 from tensorly.decomposition import parafac, partial_tucker
