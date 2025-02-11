@@ -5,7 +5,7 @@
 data/**
 *.xlsx
 *.pdf
-
+*.txt
 
 #VSCode folder
 .vscode/
