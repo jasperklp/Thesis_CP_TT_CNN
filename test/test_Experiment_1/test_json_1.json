@@ -1,0 +1,32 @@
+{
+    "traceEvents" : [
+    {
+        "ph": "X", "cat": "user_annotation", "name": "Input_image", "pid": 20004, "tid": 29284,
+        "ts": 1340235452592.376, "dur": 114.300,
+        "args": {
+            "External id": 4097,"Record function id": 0, "Ev Idx": 0
+        }
+    },
+    {
+        "ph": "X", "cat": "cpu_op", "name": "aten::randn", "pid": 20004, "tid": 29284,
+        "ts": 1340235452624.176, "dur": 35.300,
+        "args": {
+            "External id": 4098,"Record function id": 0, "Ev Idx": 1
+        }
+    },
+    {
+        "ph": "X", "cat": "cpu_op", "name": "aten::empty", "pid": 20004, "tid": 29284,
+        "ts": 1340235452627.676, "dur": 14.900,
+        "args": {
+            "External id": 4099,"Record function id": 0, "Ev Idx": 2
+        }
+    },
+    {
+        "ph": "i", "cat": "cpu_instant_event", "s": "t", "name": "[memory]",
+        "pid": 20004, "tid": 29284,
+        "ts": 1340235574848.376,
+        "args": {
+            "Device Type": 0, "Ev Idx": 18077, "Bytes": 36416, "Device Id": -1, "Addr": 4707628195840, "Total Allocated": 4227196, "Total Reserved": 0
+        }
+    }]
+}

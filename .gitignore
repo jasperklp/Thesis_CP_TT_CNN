@@ -1,3 +1,16 @@
+#User added to standard Python .gitignore from VSCODE
+*.json
+*.html
+.\log
+data/**
+*.xlsx
+*.pdf
+
+
+#VSCode folder
+.vscode/
+
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
