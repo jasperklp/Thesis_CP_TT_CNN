@@ -2,7 +2,8 @@
 *.json
 *.html
 .\log
-data/**
+data/data*/*
+!data/data/*/
 *.xlsx
 *.pdf
 *.txt
