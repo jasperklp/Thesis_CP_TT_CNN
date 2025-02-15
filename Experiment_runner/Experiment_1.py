@@ -1,5 +1,5 @@
-import verify_model_matching_test
-import verify_model_matching_test_no_MKL
+import Experiment_runner.verify_model_matching_MKL as verify_model_matching_MKL
+import Experiment_runner.verify_model_matching_test_df_pytorch as verify_model_matching_test_df_pytorch
 from experiment_helper_functions import measurement
 import logging
 import inspect
@@ -29,7 +29,7 @@ def in_channel_default_pytorch():
 
     filename_in_channel = f"verify_model_matching_tt_{inspect.currentframe().f_code.co_name}"
     print(filename_in_channel)
-    verify_model_matching_test_no_MKL.main(measure_data_in_channel,filename_in_channel)
+    verify_model_matching_test_df_pytorch.main(measure_data_in_channel,filename_in_channel)
 
 def out_channel_default_pytorch():
     measure_data_out_channel  = measurement(in_channel  = [128],                                      
@@ -42,7 +42,7 @@ def out_channel_default_pytorch():
                                         ) 
     filename_out_channel = f"verify_model_matching_tt_{inspect.currentframe().f_code.co_name}" #Gives folder name of the current out channel
     print(filename_out_channel)
-    verify_model_matching_test_no_MKL.main(measure_data_out_channel,filename_out_channel)
+    verify_model_matching_test_df_pytorch.main(measure_data_out_channel,filename_out_channel)
 
 def image_size_default_pytorch():
     measurement_data_image_size = measurement(in_channel = [4,16, 128 ,512],
@@ -56,7 +56,7 @@ def image_size_default_pytorch():
 
     filename = f"verify_model_matching_ttcp_{inspect.currentframe().f_code.co_name}" #Gives folder name of the current out channel
     print(filename)
-    verify_model_matching_test_no_MKL.main(measurement_data_image_size,filename, routine = "same_in_out")
+    verify_model_matching_test_df_pytorch.main(measurement_data_image_size,filename, routine = "same_in_out")
 
 def kernel_size_default_pytorch():
     measurement_data_kernel_size = measurement(in_channel = [4,16,128,512],
@@ -68,7 +68,7 @@ def kernel_size_default_pytorch():
                                               epochs=1)
     filename = f"verify_model_matching_ttcp_{inspect.currentframe().f_code.co_name}" #Gives folder name of the current out channel
     print(filename)
-    verify_model_matching_test_no_MKL.main(measurement_data_kernel_size,filename, routine="same_in_out_same_kernel_pad")
+    verify_model_matching_test_df_pytorch.main(measurement_data_kernel_size,filename, routine="same_in_out_same_kernel_pad")
 
 def mkl_switch_over_default_pytorch():
     measurement_data = measurement( in_channel =  [7,7,7, 8,8,8, 9,9,9] ,
@@ -80,7 +80,7 @@ def mkl_switch_over_default_pytorch():
                                     epochs=1)
     filename = f"verify_model_matching_{inspect.currentframe().f_code.co_name}" #Gives folder name of the current out channel
     print(filename)
-    verify_model_matching_test_no_MKL.main(measurement_data,filename, routine="same_in_out")
+    verify_model_matching_test_df_pytorch.main(measurement_data,filename, routine="same_in_out")
 
     
 def in_channel():
@@ -96,7 +96,7 @@ def in_channel():
 
     filename_in_channel = f"verify_model_matching_{inspect.currentframe().f_code.co_name}"
     print(filename_in_channel)
-    verify_model_matching_test.main(measure_data_in_channel,filename_in_channel)
+    verify_model_matching_MKL.main(measure_data_in_channel,filename_in_channel)
 
 def out_channel():
     measure_data_out_channel  = measurement(in_channel  = [128],                                      
@@ -109,7 +109,7 @@ def out_channel():
                                         ) 
     filename_out_channel = f"verify_model_matching_{inspect.currentframe().f_code.co_name}" #Gives folder name of the current out channel
     print(filename_out_channel)
-    verify_model_matching_test.main(measure_data_out_channel,filename_out_channel)
+    verify_model_matching_MKL.main(measure_data_out_channel,filename_out_channel)
 
 def image_size():
     measurement_data_image_size = measurement(in_channel = [4, 16, 128 ,512],
@@ -123,7 +123,7 @@ def image_size():
 
     filename = f"verify_model_matching_{inspect.currentframe().f_code.co_name}" #Gives folder name of the current out channel
     print(filename)
-    verify_model_matching_test.main(measurement_data_image_size,filename, routine = "same_in_out")
+    verify_model_matching_MKL.main(measurement_data_image_size,filename, routine = "same_in_out")
 
 def kernel_size():
     measurement_data_kernel_size = measurement(in_channel = [4,16,128,512],
@@ -135,7 +135,7 @@ def kernel_size():
                                               epochs=1)
     filename = f"verify_model_matching_{inspect.currentframe().f_code.co_name}" #Gives folder name of the current out channel
     print(filename)
-    verify_model_matching_test.main(measurement_data_kernel_size,filename, routine="same_in_out_same_kernel_pad")
+    verify_model_matching_MKL.main(measurement_data_kernel_size,filename, routine="same_in_out_same_kernel_pad")
 
 
 

@@ -4,7 +4,7 @@ import os
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 
-import verify_model_matching_test_no_MKL as modeler
+import Experiment_runner.verify_model_matching_test_df_pytorch as modeler
 import experiment_helper_functions as helper
 import CNN_models as CNN_models
 import torch
