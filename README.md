@@ -17,7 +17,7 @@ In order to obtain the data for the experiments shown in this thesis the file sh
 
 But a single measurement can be setup as follows:
 
-First one creates a measurement dataclass containing all possible data combinations. If desired one can chose an iterator. By default it tests for all possible data combinations. Then one needs to select a runner. This can be the experiment_runner_mkldnn which runs forced on the MKL (not used in the final result of the theis) or the experiment_runner_df_pytorch, which runs the experiment with default pytorch settings.
+First one creates a measurement dataclass containing all possible data combinations. If desired one can chose an iterator. By default it tests for all possible data combinations. Then one needs to select a runner. This can be the verify_model_matching_MKL which runs forced on the MKL (not used in the final result of the theis) or the verify_model_matching_df_pytorch, which runs the experiment with default pytorch settings.
 
 The results will be put in the ./data/data/{function_name} folder. Additionaly a log will be put in ./data/log/{function name} folder.
 
