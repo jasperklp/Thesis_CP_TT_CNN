@@ -7,11 +7,11 @@ GIL folder has been taken from https://github.com/jacobgil/pytorch-tensor-decomp
 
 The experiments used in the report can be found in the Experiment runner folder. One file will gather the data for the first experiment and the other for the second experiment.
 
-###
+#######
 
 Run an experiment. (file experiment 1 and experiment 2&3)
 
-###
+#######
 
 In order to obtain the data for the experiments shown in this thesis the file should just be run. In the main file all sorts of tests are stated. The tests, which are uncommend are part of the exctual thesis. 
 
