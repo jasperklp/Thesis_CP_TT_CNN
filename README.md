@@ -34,6 +34,6 @@ To process an experiment, one should chose the correct processor for each experi
 
 Theoretical analsysis in thesis
 
-######
+#######
 
 In the thesis a theoretical analysis is done. The results of the theoretical analysis can be found in the ./Dataprocessing/Thoertical_Analysis_in_thesis folder.
