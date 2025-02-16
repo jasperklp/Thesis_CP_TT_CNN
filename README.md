@@ -21,6 +21,9 @@ First one creates a measurement dataclass containing all possible data combinati
 
 The results will be put in the ./data/data/{function_name} folder. Additionaly a log will be put in ./data/log/{function name} folder.
 
+You want to see the results for differnt convolutions in the output folder one needs to add:
+  with recordfunction("Name which has to come into the output file"): around the convolution kernel, which are in the convolutions.py file in the tensoly-torch library
+
 #######
 
 Process an experiment
