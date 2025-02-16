@@ -1,3 +1,8 @@
+import sys
+import os
+#Adds root of thesis folder to sys path.
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
 import Experiment_runner.verify_model_matching_MKL as verify_model_matching_MKL
 import Experiment_runner.verify_model_matching_test_df_pytorch as verify_model_matching_test_df_pytorch
 from experiment_helper_functions import measurement
