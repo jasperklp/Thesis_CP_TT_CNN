@@ -40,11 +40,11 @@ def plot_image_size_data_ratio_theo_act(results_theo, results_act, measurement_p
     ax[1][0].set_ylim([0,6]) 
     ax[1][1].set_ylim([0,6])
 
-    plt.suptitle("Ratio between actual over theoretical amount of memory\n Ratio higher than 1 means actual larger than theoretical")
+    plt.suptitle("Ratio between actual over theoretical amount of memory")
     
     plt.legend(model_types + ["ratio=1"], loc = 'lower left', bbox_to_anchor = (1.05,0.5),borderaxespad=0.)
     plt.tight_layout(rect=[0,0,0.9,1])
-    fig.subplots_adjust(hspace=0.5, right=0.8)
+    fig.subplots_adjust(hspace=0.8, right=0.8)
     plt.show()
 
 
